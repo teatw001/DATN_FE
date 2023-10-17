@@ -91,7 +91,7 @@ const EditFilm: React.FC<EditFilmProps> = ({ dataID }) => {
       </Button>
 
       <Drawer
-        title="Cập nhật Phim"
+        title="Create a new account"
         width={720}
         onClose={onClose}
         open={open}
@@ -101,16 +101,7 @@ const EditFilm: React.FC<EditFilmProps> = ({ dataID }) => {
         extra={
           <Space>
             <Button onClick={onClose}>Cancel</Button>
-            <Button
-              danger
-              type="primary"
-              htmlType="submit"
-              onClick={() => {
-                form.validateFields().then((values) => {
-                  onFinish(values);
-                });
-              }}
-            >
+            <Button onClick={onClose} danger type="primary">
               Submit
             </Button>
           </Space>
@@ -127,62 +118,86 @@ const EditFilm: React.FC<EditFilmProps> = ({ dataID }) => {
               <Form.Item
                 name="name"
                 label="Name"
-                rules={[{ required: true, message: "Please enter nameFilm" }]}
-              >
-                <Input placeholder="Please enter nameFilm" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="image"
-                label="Image"
-                rules={[{ required: true, message: "Please select an image" }]}
-              >
-                <Input placeholder="Please enter user image" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="slug"
-                label="Slug"
-                rules={[{ required: true, message: "Please enter slug" }]}
+                rules={[{ required: true, message: "Please enter user name" }]}
               >
                 <Input placeholder="Please enter user name" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                name="trailer"
-                label="Trailer"
-                rules={[
-                  { required: true, message: "Please choose the trailer" },
-                ]}
+                name="url"
+                label="Url"
+                rules={[{ required: true, message: "Please enter url" }]}
               >
-                <Input placeholder="Please enter user trailer" />
+                <Input
+                  style={{ width: "100%" }}
+                  addonBefore="http://"
+                  addonAfter=".com"
+                  placeholder="Please enter url"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="owner"
+                label="Owner"
+                rules={[{ required: true, message: "Please select an owner" }]}
+              >
+                <Select placeholder="Please select an owner">
+                  <Option value="xiao">Xiaoxiao Fu</Option>
+                  <Option value="mao">Maomao Zhou</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="type"
+                label="Type"
+                rules={[{ required: true, message: "Please choose the type" }]}
+              >
+                <Select placeholder="Please choose the type">
+                  <Option value="private">Private</Option>
+                  <Option value="public">Public</Option>
+                </Select>
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={20}>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="time"
-                label="Time"
-                rules={[{ required: true, message: "Please choose the time" }]}
+                name="approver"
+                label="Approver"
+                rules={[
+                  { required: true, message: "Please choose the approver" },
+                ]}
               >
-                <Input placeholder="Please enter user time" />
+                <Select placeholder="Please choose the approver">
+                  <Option value="jack">Jack Ma</Option>
+                  <Option value="tom">Tom Liu</Option>
+                </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                name="release_date"
-                label="Release Date"
+                name="dateTime"
+                label="DateTime"
                 rules={[
-                  { required: true, message: "Please choose the release date" },
+                  { required: true, message: "Please choose the dateTime" },
                 ]}
               >
                 <DatePicker />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="status"
+                label="Trạng Thái"
+                rules={[{ required: true, message: "Vui lòng nhập trạng thái" }]}
+              >
+                <Select placeholder="Vui lòng nhập trạng thái">
+                  <Option value="1">Hoạt Động</Option>
+                  <Option value="2">Chưa Hoạt Động</Option>
+                </Select>
               </Form.Item>
             </Col>
           </Row>
@@ -205,17 +220,17 @@ const EditFilm: React.FC<EditFilmProps> = ({ dataID }) => {
             <Col span={24}>
               <Form.Item
                 name="description"
-                label="Description"
+                label="Mô Tả"
                 rules={[
                   {
                     required: true,
-                    message: "please enter url description",
+                    message: "Vui lòng nhập mô tả",
                   },
                 ]}
               >
                 <Input.TextArea
                   rows={4}
-                  placeholder="please enter url description"
+                  placeholder="Vui lòng nhập mô tả"
                 />
               </Form.Item>
             </Col>
