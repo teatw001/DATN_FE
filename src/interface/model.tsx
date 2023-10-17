@@ -10,6 +10,7 @@ export interface IFilms {
   status: number;
 }
 export interface ICategorys {
+
   id: string;
   name: string;
   slug: string;

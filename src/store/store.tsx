@@ -4,6 +4,7 @@ import storage from "redux-persist/lib/storage";
 import { setupListeners } from "@reduxjs/toolkit/query/react";
 import filmsAPI from "../service/films.service";
 import categorysAPI from "../service/cate.service";
+
 import cinemasAPI from "../service/brand.service";
 import showsAPI from "../service/show.service";
 import selectedCinemaReducer from "../components/CinemaSlice/selectedCinemaSlice";
@@ -27,7 +28,13 @@ const rootReducer = combineReducers({
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: {
+    films: filmsAPI.reducer,
+
+    cates: categorysAPI.reducer,
+    cinemas: cinemasAPI.reducer,
+    shows: showsAPI.reducer,
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

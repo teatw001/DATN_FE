@@ -11,6 +11,7 @@ import F_B from "./pages/Clients/F&B/F&B";
 import Login from "./pages/Clients/Login/Login";
 import LayoutAdmin from "./Layout/LayoutAdmin/LayoutAdmin";
 import ListFilm from "./pages/Admin/ListFilm/ListFilm";
+
 import ListCate from "./pages/Admin/Category/ListCategory";
 import ListCinema from "./pages/Admin/Cinemas/ListCinema";
 import ListShow from "./pages/Admin/Quản Lí suất chiếu/ListShow";
@@ -67,6 +68,7 @@ function App() {
           path: "/admin/listcate",
           element: <ListCate />,
         },
+
         {
           path: "/admin/cinema",
           element: <ListCinema />,

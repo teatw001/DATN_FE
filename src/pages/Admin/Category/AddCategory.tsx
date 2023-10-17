@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import { UserAddOutlined } from "@ant-design/icons";
 import {
   Button,
@@ -30,6 +31,7 @@ const AddCategory: React.FC = () => {
 
   const onFinish = async (values: any) => {
     try {
+
       await addCategory(values).unwrap();
       message.success("Thêm sản phẩm thành công");
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -52,6 +54,7 @@ const AddCategory: React.FC = () => {
         Thêm
       </Button>
       <Drawer
+
         title="Thêm Loại Phim"
         width={720}
         onClose={() => {
@@ -97,6 +100,7 @@ const AddCategory: React.FC = () => {
                 <Input placeholder="Please enter user name" />
               </Form.Item>
             </Col>
+
             <Col span={12}>
               <Form.Item
                 name="slug"
@@ -106,6 +110,7 @@ const AddCategory: React.FC = () => {
                 <Input placeholder="Please enter user name" />
               </Form.Item>
             </Col>
+
           </Row>
 
           <Row gutter={16}>
@@ -127,5 +132,6 @@ const AddCategory: React.FC = () => {
     </>
   );
 };
+
 
 export default AddCategory;

@@ -1,4 +1,5 @@
 import React from "react";
+
 import { Space, Table, Input, Button, Popconfirm } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DeleteOutlined } from "@ant-design/icons";
@@ -11,7 +12,6 @@ import {
 } from "../../../service/cate.service";
 import { ICategorys } from "../../../interface/model";
 import UpdateCategory from "./UpdateCategory";
-
 interface DataType {
   id: string;
   name: string;
@@ -86,6 +86,7 @@ const ListCate: React.FC = () => {
     })
   );
 
+
   return (
     <>
       <div className="">
@@ -96,6 +97,7 @@ const ListCate: React.FC = () => {
             style={{ width: 600 }}
           />
 
+
           <AddCategory />
         </div>
       </div>
@@ -103,5 +105,6 @@ const ListCate: React.FC = () => {
     </>
   );
 };
+
 
 export default ListCate;
