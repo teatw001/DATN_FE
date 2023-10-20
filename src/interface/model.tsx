@@ -41,3 +41,12 @@ export interface IBookTicket {
   price: string,
   status: number,
 }
+export interface IBookTicketDetail {
+  id: string,
+  book_ticket_id: string,
+  time_id: string,
+  food_id: string,
+  chair: string,
+  quantity: number,
+  price: number,
+}

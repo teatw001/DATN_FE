@@ -2,14 +2,9 @@ import React from "react";
 import { Space, Table, Input, Button, Popconfirm } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DeleteOutlined } from "@ant-design/icons";
-import {
-  useFetchCinemaQuery,
-  useRemoveCinemaMutation,
-} from "../../../service/brand.service";
-import { IBookTicket, ICinemas } from "../../../interface/model";
+import { IBookTicket } from "../../../interface/model";
 import { useFetchBookTicketQuery, useRemoveBookTicketMutation } from "../../../service/book_ticket.service";
 import AddBookTicket from "./AddBookTicket";
-import EditBookTicket from "./EditBookTicket";
 
 interface DataType {
     id: string,
@@ -25,6 +20,7 @@ const { Search } = Input;
 
 const ListBookTicket: React.FC = () => {
   const { data: bookticket } = useFetchBookTicketQuery();
+  
   const [removeBookTicket] = useRemoveBookTicketMutation();
   const columns: ColumnsType<DataType> = [
     {
@@ -68,7 +64,7 @@ const ListBookTicket: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <EditBookTicket dataCinema={record} />
+          {/* <EditBookTicket dataCinema={record} /> */}
 
           <Popconfirm
             placement="topLeft"
