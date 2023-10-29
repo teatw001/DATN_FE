@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Header from "../../../Layout/LayoutUser/Header";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   useAddChairsMutation,
   useFetchChairsQuery,
@@ -25,13 +25,13 @@ interface SeatInfo {
 
 const BookingSeat = () => {
   const seatStatusByShowtime = new Map();
-
+  const navigate = useNavigate();
   const numRows = 7;
   const numColumns = 10;
   const { id } = useParams();
   const [addBooking] = useAddChairsMutation();
   const { data: DataSeatBooked } = useFetchChairsQuery();
-
+  const [Ghe, setGhe] = useState<[]>();
   const isVIPSeat = (row: number, column: number): boolean => {
     return row >= 1 && row <= 5 && column >= 2 && column <= 7;
   };
@@ -51,9 +51,8 @@ const BookingSeat = () => {
         const type = isVIPSeat(rowIndex, columnIndex)
           ? SeatType.VIP
           : SeatType.normal;
-        const seatName = `${String.fromCharCode(65 + rowIndex)}${
-          columnIndex + 1
-        }`;
+        const seatName = `${String.fromCharCode(65 + rowIndex)}${columnIndex + 1
+          }`;
         const status = bookedSeatNames.includes(seatName)
           ? SeatStatus.Booked
           : SeatStatus.Available;
@@ -97,15 +96,19 @@ const BookingSeat = () => {
       id_time_detail: id,
     };
 
-    try {
-      const response = await addBooking(selectedSeatsData);
-
-      if ((response as any)?.data) {
-        console.log("Đặt ghế thành công!");
-      }
-    } catch (error) {
-      console.error("Lỗi khi đặt ghế:", error);
-    }
+    // try {
+      // const response = await addBooking(selectedSeatsData);
+      setGhe(selectedSeats);
+      console.log(Ghe);
+      navigate("/ticket-detail");
+      
+      // if ((response as any)?.data) {
+      //   navigate("/ticket-detail");
+      //   console.log("Đặt ghế thành công!");
+      // }
+    // } catch (error) {
+    //   console.error("Lỗi khi đặt ghế:", error);
+    // }
   };
   return (
     <>

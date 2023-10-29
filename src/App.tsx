@@ -20,6 +20,7 @@ import ListMovieRoom from "./pages/Admin/MovieRoom/ListMovieRoom";
 import ListFood from "./pages/Admin/Food/ListFood";
 import ListCateDetail from "./pages/Admin/CateDetail/ListCateDetail";
 import ListTime from "./pages/time/listTime";
+import Ticket_Detail from "./pages/Clients/Ticket-detail/Ticket-Detail";
 
 function App() {
   const router = createBrowserRouter([
@@ -34,6 +35,10 @@ function App() {
         {
           path: "/book-ticket/:id",
           element: <BookingSeat />,
+        },
+        {
+          path: "/ticket-detail",
+          element: <Ticket_Detail />,
         },
         {
           path: "/movie_about/:id",
