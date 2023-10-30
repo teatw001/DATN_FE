@@ -31,7 +31,6 @@ const BookingSeat = () => {
   const { id } = useParams();
   const [addBooking] = useAddChairsMutation();
   const { data: DataSeatBooked } = useFetchChairsQuery();
-  const [Ghe, setGhe] = useState<[]>();
   const isVIPSeat = (row: number, column: number): boolean => {
     return row >= 1 && row <= 5 && column >= 2 && column <= 7;
   };
@@ -96,19 +95,16 @@ const BookingSeat = () => {
       id_time_detail: id,
     };
 
-    // try {
-      // const response = await addBooking(selectedSeatsData);
-      setGhe(selectedSeats);
-      console.log(Ghe);
-      navigate("/ticket-detail");
+    try {
+      const response = await addBooking(selectedSeatsData);
       
-      // if ((response as any)?.data) {
-      //   navigate("/ticket-detail");
-      //   console.log("Đặt ghế thành công!");
-      // }
-    // } catch (error) {
-    //   console.error("Lỗi khi đặt ghế:", error);
-    // }
+      if ((response as any)?.data) {
+        navigate("/ticket-detail");
+        console.log("Đặt ghế thành công!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi đặt ghế:", error);
+    }
   };
   return (
     <>
