@@ -97,8 +97,10 @@ const BookingSeat = () => {
 
     try {
       const response = await addBooking(selectedSeatsData);
-      
+      console.log(selectedSeatsData);
       if ((response as any)?.data) {
+        console.log(selectedSeatsData);
+        
         navigate("/ticket-detail");
         console.log("Đặt ghế thành công!");
       }
