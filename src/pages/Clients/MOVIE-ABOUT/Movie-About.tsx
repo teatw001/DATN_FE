@@ -68,7 +68,7 @@ const Movie_About = () => {
 
                   <div className="flex justify-center mt-8">
                     <Link
-                      to={"/book-ticket"}
+                      to={`/book-ticket/${film?.data.id}`}
                       className="px-10 rounded-3xl bg-red-600 py-3 text-sm font-medium text-white shadow hover:bg-red-700 focus:outline-none active:bg-red-500 sm:w-auto"
                     >
                       Đặt vé
