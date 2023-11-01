@@ -5,6 +5,7 @@ import {
   useAddChairsMutation,
   useFetchChairsQuery,
 } from "../../../service/chairs.service";
+import { useGetProductByIdQuery } from "../../../service/films.service";
 enum SeatStatus {
   Available = "available",
   Booked = "booked",
@@ -31,6 +32,7 @@ const BookingSeat = () => {
   const { id } = useParams();
   const [addBooking] = useAddChairsMutation();
   const { data: DataSeatBooked } = useFetchChairsQuery();
+  const { data: film } = useGetProductByIdQuery(id);
   const isVIPSeat = (row: number, column: number): boolean => {
     return row >= 1 && row <= 5 && column >= 2 && column <= 7;
   };
@@ -113,11 +115,11 @@ const BookingSeat = () => {
       <Header />
       <div className="title-fim text-center mx-auto space-y-[10px] my-[66px]">
         <img
-          src="/openhemer.png/"
+          src={film?.data.image}
           alt=""
           className="block text-center mx-auto"
         />
-        <h1 className="text-[40px]  font-bold text-[#FFFFFF]">Oppenheimer</h1>
+        <h1 className="text-[40px]  font-bold text-[#FFFFFF]">{film?.data.name}</h1>
         <span className="text-[14px] text-[#8E8E8E] block">
           Thứ Hai, ngày 21 tháng 8, 13:00-16:00
         </span>

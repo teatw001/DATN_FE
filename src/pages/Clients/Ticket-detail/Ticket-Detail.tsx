@@ -1,9 +1,13 @@
 import React from 'react'
 import Header from '../../../Layout/LayoutUser/Header'
 import { Card, Row, Col, Typography, Button } from 'antd';
+import { useSelector } from 'react-redux';
 
 const { Title, Text } = Typography;
 const Ticket_Detail = () => {
+    const chair = useSelector((state) => state.bkseats.data);
+    console.log(chair);
+    
     return (
         <div>
             <Header />

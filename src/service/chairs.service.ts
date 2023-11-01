@@ -21,7 +21,16 @@ const bookingSeatAPI = createApi({
       }),
       invalidatesTags: ["chairs"],
     }),
+    saveChairs: builder.mutation<IChairs, IChairs>({
+      query: (chair) => {
+        const newChair: IChairs = { ...chair, id: generateUniqueId() };
+        return newChair;
+      },
+    }),
   }),
 });
-export const { useAddChairsMutation, useFetchChairsQuery } = bookingSeatAPI;
+export const { useAddChairsMutation, useFetchChairsQuery, useSaveChairsMutation } = bookingSeatAPI;
 export default bookingSeatAPI;
+function generateUniqueId(): string {
+  return Date.now().toString();
+}
