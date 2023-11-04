@@ -2,12 +2,15 @@ import React from 'react'
 import Header from '../../../Layout/LayoutUser/Header'
 import { Card, Row, Col, Typography, Button } from 'antd';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const Ticket_Detail = () => {
-    const chair = useSelector((state) => state.bkseats.data);
+  const chair = useSelector((state: any) => state.chairs);
     console.log(chair);
-    
+    const handlePayment = () => {
+        history.push('/pay-form');
+      };
     return (
         <div>
             <Header />
@@ -38,7 +41,7 @@ const Ticket_Detail = () => {
                         <Text>Tổng cộng: $30</Text>
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                        <Button type="dashed" size="large">Thanh Toán</Button>
+                        <Link to= {`/pay-form`}><Button onClick={handlePayment} type="dashed" size="large">Thanh Toán</Button></Link>
                     </div>
                 </Card>
             </div>

@@ -6,6 +6,8 @@ import {
   useFetchChairsQuery,
 } from "../../../service/chairs.service";
 import { useGetProductByIdQuery } from "../../../service/films.service";
+import { useDispatch, useSelector } from "react-redux";
+import { setChair } from "../../../components/CinemaSlice/Chairs.slice";
 enum SeatStatus {
   Available = "available",
   Booked = "booked",
@@ -30,7 +32,7 @@ const BookingSeat = () => {
   const numRows = 7;
   const numColumns = 10;
   const { id } = useParams();
-  const [addBooking] = useAddChairsMutation();
+  const dispatch = useDispatch();
   const { data: DataSeatBooked } = useFetchChairsQuery();
   const { data: film } = useGetProductByIdQuery(id);
   const isVIPSeat = (row: number, column: number): boolean => {
@@ -98,13 +100,10 @@ const BookingSeat = () => {
     };
 
     try {
-      const response = await addBooking(selectedSeatsData);
-      console.log(selectedSeatsData);
-      if ((response as any)?.data) {
-        console.log(selectedSeatsData);
-        
+      const response = await dispatch(setChair(selectedSeatsData));
+      if ((response as any)?.payload) {
         navigate("/ticket-detail");
-        console.log("Đặt ghế thành công!");
+        alert("Đặt ghế thành công!");
       }
     } catch (error) {
       console.error("Lỗi khi đặt ghế:", error);

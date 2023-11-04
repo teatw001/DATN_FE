@@ -21,6 +21,7 @@ import ListFood from "./pages/Admin/Food/ListFood";
 import ListCateDetail from "./pages/Admin/CateDetail/ListCateDetail";
 import ListTime from "./pages/time/listTime";
 import Ticket_Detail from "./pages/Clients/Ticket-detail/Ticket-Detail";
+import PaymentForm from "./pages/Clients/PaymentForm";
 
 function App() {
   const router = createBrowserRouter([
@@ -39,6 +40,10 @@ function App() {
         {
           path: "/ticket-detail",
           element: <Ticket_Detail />,
+        },
+        {
+          path: "/pay-form",
+          element: <PaymentForm />,
         },
         {
           path: "/movie_about/:id",
