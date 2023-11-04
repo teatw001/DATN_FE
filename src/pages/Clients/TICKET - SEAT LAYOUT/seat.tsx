@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import Header from "../../../Layout/LayoutUser/Header";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   useAddChairsMutation,
   useFetchChairsQuery,
 } from "../../../service/chairs.service";
+import {
+  useFetchShowTimeQuery,
+  useGetShowTimeByIdQuery,
+} from "../../../service/show.service";
 enum SeatStatus {
   Available = "available",
   Booked = "booked",
@@ -24,13 +28,17 @@ interface SeatInfo {
 }
 
 const BookingSeat = () => {
-  const seatStatusByShowtime = new Map();
-
   const numRows = 7;
   const numColumns = 10;
   const { id } = useParams();
+
   const [addBooking] = useAddChairsMutation();
-  const { data: DataSeatBooked } = useFetchChairsQuery();
+  const { data: DataSeatBooked, isLoading } = useFetchChairsQuery();
+  const { data: TimeDetails } = useFetchShowTimeQuery();
+  console.log(TimeDetails);
+
+  // const { data: TimeDetailsbyID } = useGetShowTimeByIdQuery(id as string);
+  // console.log(TimeDetailsbyID);
 
   const isVIPSeat = (row: number, column: number): boolean => {
     return row >= 1 && row <= 5 && column >= 2 && column <= 7;
@@ -58,8 +66,9 @@ const BookingSeat = () => {
         const type = isVIPSeat(rowIndex, columnIndex)
           ? SeatType.VIP
           : SeatType.normal;
-        const seatName = `${String.fromCharCode(65 + rowIndex)}${columnIndex + 1
-          }`;
+        const seatName = `${String.fromCharCode(65 + rowIndex)}${
+          columnIndex + 1
+        }`;
         const status = bookedSeatNames.includes(seatName)
           ? SeatStatus.Booked
           : SeatStatus.Available;
@@ -104,10 +113,10 @@ const BookingSeat = () => {
     };
 
     try {
-      const response = await dispatch(setChair(selectedSeatsData));
-      if ((response as any)?.payload) {
-        navigate("/ticket-detail");
-        alert("Đặt ghế thành công!");
+      const response = await addBooking(selectedSeatsData);
+
+      if ((response as any)?.data) {
+        console.log("Đặt ghế thành công!");
       }
     } catch (error) {
       console.error("Lỗi khi đặt ghế:", error);
@@ -162,11 +171,11 @@ const BookingSeat = () => {
       <Header />
       <div className="title-fim text-center mx-auto space-y-[10px] my-[66px]">
         <img
-          src={film?.data.image}
+          src="/openhemer.png/"
           alt=""
           className="block text-center mx-auto"
         />
-        <h1 className="text-[40px]  font-bold text-[#FFFFFF]">{film?.data.name}</h1>
+        <h1 className="text-[40px]  font-bold text-[#FFFFFF]">Oppenheimer</h1>
         <span className="text-[14px] text-[#8E8E8E] block">
           Thứ Hai, ngày 21 tháng 8, 13:00-16:00
         </span>
