@@ -30,7 +30,6 @@ import QrCode from "./components/QrCode/qr";
 import { setSelectedCinema } from "./components/CinemaSlice/selectedCinemaSlice";
 import { updateToken } from "./components/CinemaSlice/authSlice";
 import { useDispatch } from "react-redux";
-
 function App() {
   const router = createBrowserRouter([
     {
