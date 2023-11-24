@@ -1,32 +1,41 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Ipay } from "../interface/model";
 
-const PayAPI = createApi({
+const payAPI = createApi({
   reducerPath: "pays",
   baseQuery: fetchBaseQuery({
     baseUrl: "http://127.0.0.1:8000/api",
+    prepareHeaders: (headers, { getState }) => {
+      // Add your authorization header here
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
   }),
   tagTypes: ["pay"],
   endpoints: (builder) => ({
-    fetchPays: builder.query<Ipay[], void>({
-      query: () => "/Payment/",
+    getPaybyTranfer: builder.query({
+      query: (money) => `/Payment?&amount=${money}`,
       providesTags: ["pay"],
     }),
-
-    getPays: builder.mutation({
-      query: (amount) => ({
-        url: `/Payment?&amount=${amount}`,
-        method: "GET",
+    SendEmail: builder.mutation({
+      query: () => ({
+        url: "/send-book-ticket-details-email/",
+        method: "POST",
       }),
       invalidatesTags: ["pay"],
     }),
-
-    fetchPayByAmount: builder.query<Ipay, any>({
-      query: (pay) => `/Payment?amount=${pay.amount}&id=${pay.time_detail_id}`,
+    PaymentMomo: builder.query({
+      query: (money) => `/momo_payment?&amount=${money}`,
       providesTags: ["pay"],
     }),
-
   }),
 });
-export const { useGetPaysMutation, useFetchPaysQuery, useFetchPayByAmountQuery } = PayAPI;
-export default PayAPI;
+
+export const {
+  useGetPaybyTranferQuery,
+  useSendEmailMutation,
+  usePaymentMomoQuery,
+} = payAPI;
+export default payAPI;

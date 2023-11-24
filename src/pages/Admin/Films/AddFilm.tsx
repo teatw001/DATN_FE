@@ -34,6 +34,7 @@ const AddFilm: React.FC = () => {
   const onFinish = async (values: any) => {
     try {
       values.release_date = values.release_date.format("YYYY-MM-DD");
+      values.end_date = values.end_date.format("YYYY-MM-DD");
       await addProduct(values).unwrap();
       message.success("Thêm sản phẩm thành công");
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -154,6 +155,17 @@ const AddFilm: React.FC = () => {
                 <DatePicker />
               </Form.Item>
             </Col>
+            <Col span={12}>
+              <Form.Item
+                name="end_date"
+                label="End Date"
+                rules={[
+                  { required: true, message: "Please choose the End date" },
+                ]}
+              >
+                <DatePicker />
+              </Form.Item>
+            </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
@@ -166,19 +178,6 @@ const AddFilm: React.FC = () => {
                   <Option value="1">1</Option>
                   <Option value="0">0</Option>
                 </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="cateDetail"
-                label="cateDetail"
-                rules={[{ required: true, message: "Please select a status" }]}
-              >
-                <Checkbox
-           
-          >
-            Check all
-          </Checkbox>
               </Form.Item>
             </Col>
           </Row>

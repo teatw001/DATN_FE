@@ -1,8 +1,4 @@
-import {
-  createBrowserRouter,
-  RouterProvider,
-  useNavigate,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LayoutUser from "./Layout/LayoutUser/LayoutUser";
 import HomePages from "./pages/Clients/Homepages/home";
 import BookingSeat from "./pages/Clients/TICKET - SEAT LAYOUT/seat";
@@ -23,13 +19,15 @@ import ListBookTicket from "./pages/Admin/Book-Ticket/ListBookTicket";
 import ListMovieRoom from "./pages/Admin/MovieRoom/ListMovieRoom";
 import ListFood from "./pages/Admin/Food/ListFood";
 import ListCateDetail from "./pages/Admin/CateDetail/ListCateDetail";
-import ListVNP from "./pages/Clients/ListThanhToan/ListVNP";
 import ListTime from "./pages/Admin/time/listTime";
-
-import QrCode from "./components/QrCode/qr";
 import { setSelectedCinema } from "./components/CinemaSlice/selectedCinemaSlice";
-import { updateToken } from "./components/CinemaSlice/authSlice";
+import { updateToken, setUserId } from "./components/CinemaSlice/authSlice";
 import { useDispatch } from "react-redux";
+import Payment from "./pages/Clients/Payment/Payment";
+import ChoosePop from "./pages/Clients/ChoosePop/ChoosePop";
+import TicketBookingDetails from "./pages/Clients/Ticket-booking-details/TicketBookingDetails";
+import Dashbroad from "./pages/Admin/Dashbroad/Dashbroad";
+import PaymentMomo from "./pages/Clients/Payment/PaymentMomo";
 function App() {
   const router = createBrowserRouter([
     {
@@ -69,8 +67,12 @@ function App() {
           element: <Orther />,
         },
         {
-          path: "/listvnp",
-          element: <ListVNP />,
+          path: "/choosepop",
+          element: <ChoosePop />,
+        },
+        {
+          path: "/Tiketbookingdetail",
+          element: <TicketBookingDetails />,
         },
       ],
     },
@@ -81,6 +83,10 @@ function App() {
         {
           path: "/admin/listfilm",
           element: <ListFilm />,
+        },
+        {
+          index: true,
+          element: <Dashbroad />,
         },
         {
           path: "/admin/book_ticket",
@@ -120,11 +126,19 @@ function App() {
       path: "/login",
       element: <Login />,
     },
+    {
+      path: "/payment/:id_code",
+      element: <Payment />,
+    },
+    {
+      path: "/PayMentMoMo/:id_code",
+      element: <PaymentMomo />,
+    },
   ]);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const timeoutDuration = 1000 * 15 * 60; // 10 seconds
+    const timeoutDuration = 1000 * 60 * 60; // 10 seconds
 
     const timeoutCallback = async () => {
       try {
@@ -132,7 +146,8 @@ function App() {
         await Promise.all([
           dispatch(setSelectedCinema(null)),
           dispatch(updateToken(null)),
-          localStorage.removeItem("authToken"),
+          dispatch(setUserId(null)),
+          localStorage.clear(),
         ]);
 
         // Once both actions are completed, navigate to the root path

@@ -9,7 +9,11 @@ import {
 } from "../../../service/signup_login";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateToken } from "../../../components/CinemaSlice/authSlice";
+import {
+  updateToken,
+  setUserId,
+  setRoleAuth,
+} from "../../../components/CinemaSlice/authSlice";
 import { persistor } from "../../../store/store";
 import { message } from "antd";
 
@@ -65,11 +69,17 @@ const Login = () => {
         email: loginEmail,
         password: loginPassword,
       });
+      console.log(response);
       if ((response as any)?.data && (response as any).data.token) {
+        console.log("🚀 ~ file: Login.tsx:73 ~ handleLogin ~ response:", response)
         dispatch(updateToken((response as any).data.token));
         // Update the token in localStorage
+        dispatch(setUserId((response as any).data.user.id));
+        dispatch(setRoleAuth((response as any).data.user.role))
         localStorage.setItem("authToken", (response as any).data.token);
-
+        localStorage.setItem("user_id", (response as any).data.user.id);
+        localStorage.setItem("role", (response as any).data.user.role);
+        console.log(localStorage.getItem("user_id"));
         message.success("Đăng nhập thành công!");
         navigate("/");
       } else {
@@ -179,7 +189,7 @@ const Login = () => {
             autoComplete="off"
             className="bg-white login-form flex items-center justify-center flex-col px-10 h-full "
           >
-            <h1 className="text-3xl font-bold m-0 mb-4 tracking-tighter">
+            <h1 className="text-3xl font-bold m-0 mb-8 tracking-tighter">
               Login hire.
             </h1>
             <Form.Item

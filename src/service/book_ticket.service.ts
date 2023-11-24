@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { IBookTicket } from "../interface/model";
+import { IBookTicket, IUser } from "../interface/model";
 
 const bookTicketsAPI = createApi({
   reducerPath: "bookTickets",
@@ -16,6 +16,10 @@ const bookTicketsAPI = createApi({
       query: (id) => `/Book_ticket/${id}`,
       providesTags: ["bookTicket"],
     }),
+    getUserById: builder.query<IUser, number | string>({
+      query: (id) => `/users/${id}`,
+      providesTags: ["bookTicket"],
+    }),
     removeBookTicket: builder.mutation({
       query: (id) => ({
         url: "/Book_ticket/" + id,
@@ -24,7 +28,7 @@ const bookTicketsAPI = createApi({
       invalidatesTags: ["bookTicket"],
     }),
     addBookTicket: builder.mutation({
-      query: (bookTicket: IBookTicket) => ({
+      query: (bookTicket: any) => ({
         url: "/Book_ticket/",
         method: "POST",
         body: bookTicket,
@@ -42,10 +46,11 @@ const bookTicketsAPI = createApi({
   }),
 });
 export const {
-    useFetchBookTicketQuery,
-    useGetBookTicketByIdQuery,
-    useAddBookTicketMutation,
-    useUpdateShowTimeMutation,
-    useRemoveBookTicketMutation
+  useFetchBookTicketQuery,
+  useGetBookTicketByIdQuery,
+  useAddBookTicketMutation,
+  useUpdateShowTimeMutation,
+  useGetUserByIdQuery,
+  useRemoveBookTicketMutation,
 } = bookTicketsAPI;
 export default bookTicketsAPI;

@@ -6,6 +6,7 @@ export interface IFilms {
   trailer: string;
   time: string;
   release_date: Date;
+  end_date: Date;
   description: string;
   status: number;
 }
@@ -35,11 +36,9 @@ export interface ITime {
 export interface IBookTicket {
   id: string;
   user_id: string;
-  id_time_detail: string;
-  payment: string;
-  amount: string;
   id_chair: string;
   time: string;
+  id_code: string;
 }
 export interface IFood {
   id: string;
@@ -60,18 +59,13 @@ export interface ICateDetail {
   film_id: string;
 }
 export interface IChairs {
-  id: string;
-
   name: [];
   price: number;
   id_time_detail: string;
 }
 export interface IUser {
-  name: string,
-  email: string,
-  password: string
-}
-export interface Ipay {
-  amount: number,
-  time_detail_id: number
+  name: string;
+  phone: number;
+  email: string;
+  password: string;
 }

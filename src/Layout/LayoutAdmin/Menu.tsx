@@ -15,6 +15,7 @@ import {
 import type { MenuProps } from "antd";
 import { Layout, Menu, theme } from "antd";
 import { NavLink } from "react-router-dom";
+import Dashbroad from "../../pages/Admin/Dashbroad/Dashbroad";
 
 const { Content, Sider } = Layout;
 
@@ -33,7 +34,7 @@ const items: MenuItem[] = [
   getItem(
     "Dashboard",
     "1",
-    <NavLink to="/admin/dashboard">
+    <NavLink to="/admin">
       <PieChartOutlined />
     </NavLink>
   ),
@@ -41,7 +42,7 @@ const items: MenuItem[] = [
     getItem(
       "Đặt vé",
       "3",
-      <NavLink to="/admin">
+      <NavLink to="/admin/Tiketbookingdetail">
         <CopyOutlined />
       </NavLink>
     ),
@@ -60,6 +61,27 @@ const items: MenuItem[] = [
       </NavLink>
     ),
   ]),
+
+  getItem("Quản lí phòng chiếu", "5", <AppstoreOutlined />, [
+   
+    getItem(
+      "Quản lí suất chiếu",
+      "4",
+      <NavLink to="/admin/show">
+        <FormOutlined />
+      </NavLink>
+    ),
+    getItem(
+      "MovieRoom",
+      "5",
+      <NavLink to="/admin/movieroom">
+        <FormOutlined />
+      </NavLink>
+    ),
+  ]),
+
+
+
   getItem("Quản lí phim", "6", <AppstoreOutlined />, [
     getItem(
       "Danh sách phim",
@@ -75,27 +97,8 @@ const items: MenuItem[] = [
         <CopyOutlined />
       </NavLink>
     ),
-    getItem(
-      "Quản lí suất chiếu",
-      "9",
-      <NavLink to="/admin/show">
-        <FormOutlined />
-      </NavLink>
-    ),
-    getItem(
-      "Food",
-      "10",
-      <NavLink to="/admin/food">
-        <FormOutlined />
-      </NavLink>
-    ),
-    getItem(
-      "MovieRoom",
-      "11",
-      <NavLink to="/admin/movieroom">
-        <FormOutlined />
-      </NavLink>
-    ),
+   
+   
     getItem(
       "CateDetail",
       "12",
@@ -110,6 +113,16 @@ const items: MenuItem[] = [
       "12",
       <NavLink to="/admin/cinema">
         <CopyOutlined />
+      </NavLink>
+    ),
+  ]),
+  getItem("Quản lí đồ ăn", "12", <HomeOutlined />, [
+    
+    getItem(
+      "Food",
+      "10",
+      <NavLink to="/admin/food">
+        <FormOutlined />
       </NavLink>
     ),
   ]),
@@ -206,13 +219,13 @@ export const SideBarAdmin: React.FC<SideBarAdminProps> = ({
 
       <Layout className="site-layout">
         {header}
-
+      
         <Content>
           <div
             style={{
               margin: "16px 16px",
               padding: 24,
-              minHeight: 360,
+              minHeight: 900,
               background: colorBgContainer,
             }}
           >

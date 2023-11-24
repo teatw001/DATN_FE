@@ -225,7 +225,36 @@ button.ghost:hover i.login {
   width: 40px;
   transition: 0.3s ease-in-out;
 }
+.box {
+  position: fixed;
+  top: 0;
+  right: 0%;
+  transform: translateX(-50%);
+  background-color: white;
+  width: 50px;
+  height: 50px;
+  /* Thêm các thuộc tính CSS khác tùy thuộc vào yêu cầu của bạn */
+}
 
 .social-container a:hover {
   border: 1px solid #4bb6b7;
 }
+
+.center-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.center-image img {
+  max-width: 70%;
+  max-height: 70%;
+}
+.w-500 {
+  width: 500px;
+}
+/* .small-container {
+  height: 640px;
+  width: 640px;
+} */

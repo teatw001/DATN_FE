@@ -1,54 +1,64 @@
-import React, { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Header from "../../../Layout/LayoutUser/Header";
-import moment from "moment-timezone";
-import { Button, Modal, Tabs } from "antd";
+
+import { Button, Modal, Tabs, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { useFetchProductQuery } from "../../../service/films.service";
 import { useFetchShowTimeQuery } from "../../../service/show.service";
 import { useFetchMovieRoomQuery } from "../../../service/movieroom.service";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useFetchCinemaQuery } from "../../../service/brand.service";
 import { useFetchTimeQuery } from "../../../service/time.service";
 import type { TabsProps } from "antd";
-import { updateToken } from "../../../components/CinemaSlice/authSlice";
-import { useFetchChairsQuery } from "../../../service/chairs.service";
-import { useGetALLCateDetailByIdQuery } from "../../../service/catedetail.service";
 
+import { useGetChairEmpTyQuery } from "../../../service/chairs.service";
+import { useGetALLCateDetailByIdQuery } from "../../../service/catedetail.service";
+import * as moment from "moment-timezone";
+
+declare module "moment" {
+  interface Moment {
+    tz(zone: string): moment.Moment;
+  }
+}
 const Ticket: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedFilmId, setSelectedFilmId] = useState(null);
   const { data: films, isLoading: filmsLoading } = useFetchProductQuery();
   const { data: shows, isLoading: showsLoading } = useFetchShowTimeQuery();
   const { data: cinemas, isLoading: cinemasLoading } = useFetchCinemaQuery();
   const { data: roomsBrand, isLoading: roomsLoading } =
     useFetchMovieRoomQuery();
-  const [initialSeatCount, setInitialSeatCount] = useState(70); // Số ghế ban đầu
-  // Số ghế đã đặt
+  const { data: times } = useFetchTimeQuery();
+  const idChairEmpty =
+    (Array.isArray((shows as any)?.data)
+      ? (shows as any).data.map((show: any) => show.id).flat()
+      : []) ?? [];
 
-  const { data: chairs } = useFetchChairsQuery();
-  const { data: times, isLoading: timeLoading } = useFetchTimeQuery();
+  const getIfChairEmpty = idChairEmpty
+    ? idChairEmpty.map((id: string) => useGetChairEmpTyQuery(`${id}`))
+    : [];
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFilmId, setSelectedFilmId] = useState(null);
+  const [filmShows2, setFilmShows2] = useState<FilmShow[]>([]);
+  const user = useSelector((state: any) => state.auth?.token);
+
   const selectedCinema = useSelector((state: any) => state.selectedCinema);
 
-  moment.tz.setDefault("Asia/Ho_Chi_Minh");
-
-  const currentDateTime = moment().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+  const currentDateTime = moment()
+    .utcOffset(420)
+    .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
   const isToday2 = new Date(currentDateTime);
-  const currentDateTime2 = moment();
+  const currentDateTime2 = moment().utcOffset(420);
   const navigate = useNavigate();
   interface FilmShow {
     date: string;
     times: any[];
   }
-  const [filmShows2, setFilmShows2] = useState<FilmShow[]>([]);
-  const user = useSelector((state: any) => state.auth?.token);
-  console.log(user);
 
   const handleTimeSelection = (timeId: any) => {
     if (user) {
       // Đã đăng nhập, chuyển đến trang đặt vé
       navigate(`/book-ticket/${timeId}`);
     } else {
-      // Chưa đăng nhập, chuyển đến trang đăng nhập
+      message.warning("Bạn chưa đăng nhập!");
       navigate("/login");
     }
   };
@@ -76,7 +86,6 @@ const Ticket: React.FC = () => {
       }
     });
 
-    // Kiểm tra trước khi cập nhật filmShows2
     if (JSON.stringify(uniqueShows) !== JSON.stringify(filmShows2)) {
       setFilmShows2(uniqueShows as any);
     }
@@ -90,12 +99,17 @@ const Ticket: React.FC = () => {
     setIsModalOpen(false);
   };
   const today = new Date();
+  console.log(currentDateTime);
 
   const month = today.getMonth() + 1; // Lấy tháng (0-11, cần cộng thêm 1)
 
-  const selectedCinemaInfo = (cinemas as any)?.data.find(
-    (cinema: any) => cinema.id == selectedCinema
-  );
+  const selectedCinemaInfo = useMemo(() => {
+    return (
+      (cinemas as any)?.data?.find(
+        (cinema: any) => cinema.id == selectedCinema
+      ) ?? null
+    );
+  }, [cinemas, selectedCinema]);
 
   const getRealTime = (timeId: any) => {
     const timeInfo = (times as any)?.data.find(
@@ -117,7 +131,7 @@ const Ticket: React.FC = () => {
     daysToDisplay.push(nextDate);
   }
 
-  const items: TabsProps["items"] = daysToDisplay.map((date, index) => {
+  const items: TabsProps["items"] = daysToDisplay?.map((date, index) => {
     const formattedDate = date.toISOString().slice(0, 10);
     const show = filmShows2.find((show) => show.date === formattedDate);
     const isToday = formattedDate === isToday2.toISOString().slice(0, 10);
@@ -176,56 +190,21 @@ const Ticket: React.FC = () => {
       label,
       children: (
         <div>
-          {show && show.times.length > 0 ? (
+          {show && show.times?.length > 0 ? (
             <div className="grid grid-cols-5 ">
-              {show.times.map((time: any, timeIndex: number) => {
+              {show?.times?.map((time: any, timeIndex: number) => {
                 // Lấy thông tin thời gian
                 const showTime = getRealTime(time.time_id);
-
-                // Lọc ra các ghế đã đặt cho suất chiếu này
-                const reservedChairs = (chairs as any)?.data.filter(
-                  (chair: any) => time.id === chair.id_time_detail
+                const findChairEmpty = getIfChairEmpty.filter(
+                  (chairEmpty: any) => chairEmpty.originalArgs === `${time.id}`
                 );
-                const groupedChairs = reservedChairs.reduce(
-                  (result: any, chair: any) => {
-                    if (!result[chair.id_time_detail]) {
-                      result[chair.id_time_detail] = [];
-                    }
-                    result[chair.id_time_detail].push(chair?.name);
-                    return result;
-                  },
-                  {}
-                );
-
-                // Chuyển đổi thành mảng cuối cùng
-                const finalResult = Object.keys(groupedChairs).map((key) => ({
-                  [key]: groupedChairs[key].join(", "),
-                }));
-
-                // finalResult bây giờ chứa thông tin gộp theo id_time_detail ở dạng mảng
-                console.log(finalResult);
-                const allNames = [];
-
-                // Lặp qua mảng finalResult để lấy tất cả phần tử 'name'
-                finalResult.forEach((group) => {
-                  const keys = Object.keys(group);
-                  keys.forEach((key) => {
-                    const names = group[key].split(", ");
-                    allNames.push(...names);
-                  });
-                });
-
-                // Tính tổng số phần tử 'name'
-                const totalNameCount = allNames.length;
-                // Tính số ghế trống còn lại
-                const remainingSeats = initialSeatCount - totalNameCount;
 
                 return (
                   <div key={timeIndex} className="my-1 text-center">
                     <Button onClick={() => handleTimeSelection(time.id)}>
                       {showTime}
                     </Button>
-                    <div className="">{remainingSeats} ghế trống</div>
+                    <div className="">{findChairEmpty[0].data} ghế trống</div>
                   </div>
                 );
               })}
@@ -292,6 +271,7 @@ const Ticket: React.FC = () => {
               Tôi muốn xem một bộ phim ở
             </span>
             <select
+              title="..."
               className="rounded-[40px] px-6 py-2  text-white hover: bg-red-600 "
               name=""
               id=""
@@ -312,7 +292,7 @@ const Ticket: React.FC = () => {
               Đặt phim
             </h2>
             <div className="grid grid-cols-4 gap-10">
-              {(films as any)?.data.map((film: any) => {
+              {(films as any)?.data?.map((film: any) => {
                 const filmShows = validShows
                   ? validShows.filter((show: any) => show.film_id === film.id)
                   : [];
@@ -328,7 +308,7 @@ const Ticket: React.FC = () => {
                     />
                     <div className="h-[100px]">
                       <h3 className="text-[#FFFFFF] my-[10px] mb-[7px] font-bold text-[26px]">
-                        {film?.name.length > 18
+                        {film?.name?.length > 18
                           ? `${film?.name.slice(0, 17)}...`
                           : film?.name}
                       </h3>
@@ -339,7 +319,7 @@ const Ticket: React.FC = () => {
                       </div>
                     </div>
 
-                    {filmShows.length > 0 ? (
+                    {filmShows?.length > 0 ? (
                       <button
                         className="text-[#FFFFFF]  hover:opacity-75  rounded-lg py-3 w-full bg-[#EE2E24]"
                         onClick={() => {
@@ -419,7 +399,7 @@ const Ticket: React.FC = () => {
         >
           {selectedFilmId !== null && (
             <p className="text-center text-2xl">
-              Rạp {selectedCinemaInfo?.name}
+              Rạp {(selectedCinemaInfo as any)?.name}
             </p>
           )}
           <h2 className="font-semibold">2D PHỤ ĐỀ</h2>

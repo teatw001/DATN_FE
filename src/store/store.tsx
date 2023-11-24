@@ -20,6 +20,7 @@ import showsAPI from "../service/show.service";
 import foodAPI from "../service/food.service";
 import movieRoomAPI from "../service/movieroom.service";
 import selectedCinemaReducer from "../components/CinemaSlice/selectedCinemaSlice";
+import TKinformationReducer from "../components/CinemaSlice/selectSeat";
 import { combineReducers } from "redux";
 import timesAPI from "../service/time.service";
 import bookTicketsAPI from "../service/book_ticket.service";
@@ -27,7 +28,9 @@ import cateDetailAPI from "../service/catedetail.service";
 import bookingSeatAPI from "../service/chairs.service";
 import authReducer from "../components/CinemaSlice/authSlice";
 import usersAPI from "../service/signup_login";
-import PayAPI from "../service/pay.service";
+import payAPI from "../service/pay.service";
+import CinemasAPICinemas from "../service/cinemas.service";
+import { analyticApi } from "../service/analytic.service";
 // Import redux-persist
 const persistConfig = {
   key: "root",
@@ -40,12 +43,14 @@ const persistConfig = {
     "shows",
     "selectedCinema",
     "foods",
+    "auth",
     "movies",
     "catedetails",
-    "chairs",
+    "bkseats",
     "users",
-    "pay"
-  ]
+    "pays",
+    "TKinformation",
+  ],
 };
 
 const rootReducer = combineReducers({
@@ -54,17 +59,18 @@ const rootReducer = combineReducers({
   cinemas: cinemasAPI.reducer,
   shows: showsAPI.reducer,
   times: timesAPI.reducer,
-
+  pays: payAPI.reducer,
   bookTickets: bookTicketsAPI.reducer,
   foods: foodAPI.reducer,
   movies: movieRoomAPI.reducer,
   catedetails: cateDetailAPI.reducer,
   bkseats: bookingSeatAPI.reducer,
   selectedCinema: selectedCinemaReducer,
+  TKinformation: TKinformationReducer,
   users: usersAPI.reducer,
-  pays: PayAPI.reducer,
-
   auth: authReducer,
+  cinemasMovie: CinemasAPICinemas.reducer,
+  [analyticApi.reducerPath]: analyticApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -84,20 +90,26 @@ const store = configureStore({
       cinemasAPI.middleware,
       showsAPI.middleware,
       timesAPI.middleware,
+      payAPI.middleware,
       bookTicketsAPI.middleware,
       foodAPI.middleware,
       movieRoomAPI.middleware,
       cateDetailAPI.middleware,
       usersAPI.middleware,
-      PayAPI.middleware
+      analyticApi.middleware
     ),
 });
 
 setupListeners(store.dispatch);
-
 const persistor = persistStore(store);
 
-export { store, persistor };
+// Xóa dữ liệu đã lưu trong Redux-Persist để làm mới dữ liệu
+const refreshData = async () => {
+  await persistor.purge();
+  window.location.reload(); // Tải lại ứng dụng
+};
+
+export { store, persistor, refreshData };
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
