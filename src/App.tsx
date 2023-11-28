@@ -28,6 +28,7 @@ import ChoosePop from "./pages/Clients/ChoosePop/ChoosePop";
 import TicketBookingDetails from "./pages/Clients/Ticket-booking-details/TicketBookingDetails";
 import Dashbroad from "./pages/Admin/Dashbroad/Dashbroad";
 import PaymentMomo from "./pages/Clients/Payment/PaymentMomo";
+import Account from "./pages/Clients/Account/Account";
 function App() {
   const router = createBrowserRouter([
     {
@@ -73,6 +74,10 @@ function App() {
         {
           path: "/Tiketbookingdetail",
           element: <TicketBookingDetails />,
+        },
+        {
+          path: "/info_account",
+          element: <Account />,
         },
       ],
     },

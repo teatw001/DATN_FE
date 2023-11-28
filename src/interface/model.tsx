@@ -69,3 +69,8 @@ export interface IUser {
   email: string;
   password: string;
 }
+export interface ISeat {
+  id_time_detail: string | undefined;
+  id_user: string | null;
+  selected_seats: string;
+}

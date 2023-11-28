@@ -54,3 +54,20 @@ select {
     top: 0;
     left: 100%;
   }
+  .dark-theme {
+    background-color: #2b2b2b; /* Màu nền cho chủ đề tối */
+    color: #ffffff; /* Màu chữ cho chủ đề tối */
+  }
+  
+  .dark-theme ant-table {
+    background-color: #2b2b2b; /* Màu nền cho bảng trong chủ đề tối */
+    color: #ffffff; /* Màu chữ cho bảng trong chủ đề tối */
+  }
+  
+  .dark-theme ant-table-thead {
+    background-color: #333333; /* Màu nền cho phần đầu bảng trong chủ đề tối */
+  }
+  
+  .dark-theme ant-table-tbody {
+    background-color: #2b2b2b; /* Màu nền cho phần thân bảng trong chủ đề tối */
+  }

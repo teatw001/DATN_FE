@@ -21,11 +21,11 @@ import {
   setTotalPrice,
 } from "../../../components/CinemaSlice/selectSeat";
 import {
-  useGetPaybyTranferQuery,
-  usePaymentMomoQuery,
+  useGetPaybyTranferQuery, usePaymentMomoMutation,
 } from "../../../service/pay.service";
 import { useFetchFoodQuery } from "../../../service/food.service";
 import { useGetUserByIdQuery } from "../../../service/book_ticket.service";
+import { addSeat, checkSeat } from "../../../interface/api";
 enum SeatStatus {
   Available = "available",
   Booked = "booked",
@@ -77,9 +77,9 @@ const BookingSeat = () => {
   const { data: foods } = useFetchFoodQuery();
   const idUser = localStorage.getItem("user_id");
   const { data: userId } = useGetUserByIdQuery(`${idUser}`);
-
+  const [keepSeat, setkeepSeat] = useState<[]>([]);
+  const [avalibleSeat, setavalibleSeat] = useState<[]>([]);
   const [selectedSeatsCount, setSelectedSeatsCount] = useState(0);
-
   const { data: TimeDetails } = useFetchShowTimeQuery();
   const { data: TimeDetailbyId } = useGetShowTimeByIdQuery(id as string);
   const { data: CinemaDetailbyId } = useGetCinemaByIdQuery(
@@ -133,9 +133,8 @@ const BookingSeat = () => {
         const type = isVIPSeat(rowIndex, columnIndex)
           ? SeatType.VIP
           : SeatType.normal;
-        const seatName = `${String.fromCharCode(65 + rowIndex)}${
-          columnIndex + 1
-        }`;
+        const seatName = `${String.fromCharCode(65 + rowIndex)}${columnIndex + 1
+          }`;
         const status = bookedSeatNames.includes(seatName)
           ? SeatStatus.Booked
           : SeatStatus.Available;
@@ -143,8 +142,8 @@ const BookingSeat = () => {
           status === SeatStatus.Booked
             ? 0
             : type === SeatType.VIP
-            ? 50000
-            : 45000; // Đặt giá cho từng loại ghế
+              ? 50000
+              : 45000; // Đặt giá cho từng loại ghế
         return {
           row: rowIndex,
           column: columnIndex,
@@ -174,10 +173,19 @@ const BookingSeat = () => {
 
     window.location.href = `${paymentLinkMoMo?.data?.payUrl}`;
   };
-  const handleSeatClick = (row: number, column: number) => {
+  
+  const fetchData = async () => {
+    try {
+      const data = await checkSeat(id);
+        setkeepSeat(data);
+    } catch (error) {
+      console.error('Lỗi khi kiểm tra ghế đã đặt:', error);
+    }
+  };
+  const handleSeatClick = async (row: number, column: number) => {
+
     const updatedSeats = [...seats];
     const seat = updatedSeats[row][column];
-
     if (seat.status === SeatStatus.Available) {
       const selectedPrice = seat.type === SeatType.VIP ? 50000 : 45000;
 
@@ -202,6 +210,13 @@ const BookingSeat = () => {
         });
         setSelectedSeats([...selectedSeats, updatedSeats[row][column]]);
         setSelectedSeatsCount(selectedSeatsCount + 1);
+        //!----------------------------giữ ghế -----------------
+        const nameSeat = getRowName(updatedSeats[row][column].row) + updatedSeats[row][column + 1].column;
+        await addSeat({
+          id_time_detail: id,
+          id_user: idUser,
+          selected_seats: nameSeat
+        });
         // if (numColumns === 10 ) {
         //   setShowOuterSeatError(true);
         // }
@@ -229,8 +244,13 @@ const BookingSeat = () => {
       });
       setSelectedSeats(selectedSeats.filter((selected) => selected !== seat));
       setSelectedSeatsCount(selectedSeatsCount - 1);
+      const nameSeat = getRowName(updatedSeats[row][column].row) + updatedSeats[row][column + 1].column;
+      await addSeat({
+        id_time_detail: id,
+        id_user: idUser,
+        selected_seats: nameSeat
+      });
     }
-
     setSeats(updatedSeats);
   };
 
@@ -329,12 +349,13 @@ const BookingSeat = () => {
 
   const paymentLink = useGetPaybyTranferQuery(totalMoney + totalComboAmount);
 
-  const paymentLinkMoMo = usePaymentMomoQuery(totalMoney + totalComboAmount);
+  const paymentLinkMoMo = usePaymentMomoMutation(totalMoney + totalComboAmount);
 
   dispatch(setTotalPrice(totalMoney + totalComboAmount));
   const findIdPopCorn = localStorage.getItem("foodQuantities");
   const parsedPopCorn = findIdPopCorn ? JSON.parse(findIdPopCorn) : [];
-  console.log(parsedPopCorn.map((pop: any) => pop.id_food));
+
+
   useEffect(() => {
     // Initialize the total amount
     let totalAmount = 0;
@@ -356,6 +377,7 @@ const BookingSeat = () => {
     // Update the state with the calculated total amount
     setTotalComboAmount(totalAmount);
   }, [foodQuantities, foods]);
+//!                                      -------------------fetchdata giữ ghế-------------------
 
   useEffect(() => {
     setFoodQuantitiesUI(
@@ -365,9 +387,10 @@ const BookingSeat = () => {
       }, {})
     );
   }, [foodQuantities]);
+  
   useEffect(() => {
+    fetchData();
     const seatBooked = (DataSeatBooked as any)?.data || [];
-
     // Lọc ra các phần tử có id_time_detail trùng với id từ URL params
     const filteredSeats = seatBooked.filter(
       (item: any) => `${item.id_time_detail}` === id
@@ -380,7 +403,20 @@ const BookingSeat = () => {
 
     // Tạo một bản sao mới của mảng ghế
     const updatedSeats = [...seats];
-
+    keepSeat?.forEach((seatName: any) => {
+      const [rowIndex, columnIndex] = parseSeatName(seatName);
+      if (
+        rowIndex >= 0 &&
+        rowIndex < numRows &&
+        columnIndex >= 0 &&
+        columnIndex < numColumns 
+        
+      ) {
+        if (updatedSeats[rowIndex][columnIndex].status === SeatStatus.Available) {
+          updatedSeats[rowIndex][columnIndex].status = SeatStatus.kepted;
+        }
+      }
+    });
     // Duyệt qua các ghế đã đặt và cập nhật trạng thái của chúng
     bookedSeatNames.forEach((seatName: any) => {
       const [rowIndex, columnIndex] = parseSeatName(seatName);
@@ -392,13 +428,14 @@ const BookingSeat = () => {
       ) {
         updatedSeats[rowIndex][columnIndex].status = SeatStatus.Booked;
       }
+      
     });
 
-    // Cập nhật mảng ghế trong trạng thái
     setSeats(updatedSeats);
-  }, [(DataSeatBooked as any)?.data]);
-  console.log(totalComboAmount);
+    // Cập nhật mảng ghế trong trạng thái
+    console.log(keepSeat);
 
+  }, [(DataSeatBooked as any)?.data, keepSeat]);
   return (
     <>
       <Header />
@@ -544,6 +581,36 @@ const BookingSeat = () => {
                                 />
                               </span>
                             )}
+                          {infoSeat.status === SeatStatus.kepted &&
+                            infoSeat.type === SeatType.normal && (
+                              <span>
+                                <img
+                                  title="..."
+                                  style={{
+                                    display: "inline-block",
+                                    marginLeft: "40px",
+                                    marginTop: "20px",
+                                    transform: "scale(1.2)",
+                                  }}
+                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA1UlEQVR4nO2UQQoCMQxF/wUUdO/as4gbYfCSIngHvYRrdaugC0loSqSiMItW2zrKyPRDNmXmv+TTFCjqrK6KEVssSXBhC02pxz8rUoyToSQ4pgI9DZycVzTYTfoptFaLaHBOvC+mPqdMrE1WAQelih4ZzFiwzY5YsCODynlFR11rYOAMcqCqGEaDyGDKggML9mQwuV80wTz5JhtUIT+v3Af1rt2ZKvqp4Ge8Pj+vQmuQuz7Ra8VtA+fq/8D8q6eTC9h2JWo0rLe+JNiQYN00+Fu+Re3WDfJnklf/Hbx3AAAAAElFTkSuQmCC"
+                                />
+                              </span>
+                            )}
+                          {infoSeat.status === SeatStatus.kepted &&
+                            infoSeat.type === SeatType.VIP && (
+                              <span>
+                                <img
+                                  title="..."
+                                  style={{
+                                    display: "inline-block",
+                                    marginLeft: "40px",
+                                    marginTop: "20px",
+                                    transform: "scale(1.2)",
+                                  }}
+                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABIUlEQVR4nO2SsUoDQRCGv8ZSQTtfRbRKJSoKwafQ1xB8Kg2mSKetRSrjEySBm72dMLLxbMLtZfXuwoH3w8CyOzvf7j8DvbooM/Yy5V6UiSgLUeZhnSl34awV6NI4FuXNrbCyEOU15NSCiOdalJEoyxhoW6zvKs/iuUqCuhWPf4VVxMPWn7YA/XbAcxkHK6PUQrlxkhunv4A/VYEXqYCwlxtnqfmizKv6a6mACiei+cRkxr54bpzy3lh/lQ/xDEPtygErHnAYLjQBNeOovK+eC6d8Fokz8ZyvbVduG5jkYZThlNnmK4tfH9QF/9hbynDKNDYEdcHROsqUzDPYNTjzDEoPaFjR+p0Bu5aDHuz+ndW0LLfJEWUsykvbYNkRp1c39AVmSVDybGInBwAAAABJRU5ErkJggg=="
+                                />
+                              </span>
+                            )}
                         </td>
                       ))}
                     </tr>
@@ -642,71 +709,69 @@ const BookingSeat = () => {
                           (pop: any) => pop.id_food === food.id
                         );
                         return (
-                          <>
-                            <tr key={food.id}>
-                              <td className="whitespace-nowrap text-center px-4 py-2 font-medium text-gray-900">
-                                <img
-                                  src={food.image}
-                                  alt=""
-                                  className="w-[50px] bg-[#F3F3F3] h-[50px]"
-                                />
-                              </td>
-                              <td className="whitespace-nowrap text-center  px-4 py-2 text-gray-700">
-                                {food.name}
-                              </td>
-                              <td className="whitespace-nowrap text-center  px-4 py-2 text-gray-700">
-                                {formatter(food.price)}
-                              </td>
-                              <td className="whitespace-nowrap text-center mx-auto px-4 py-2 text-gray-700">
-                                <div className="text-center mx-auto">
-                                  <label
-                                    htmlFor={`Quantity-${food.id}`}
-                                    className="sr-only"
+                          <tr key={food.id}>
+                            <td className="whitespace-nowrap text-center px-4 py-2 font-medium text-gray-900">
+                              <img
+                                src={food.image}
+                                alt=""
+                                className="w-[50px] bg-[#F3F3F3] h-[50px]"
+                              />
+                            </td>
+                            <td className="whitespace-nowrap text-center  px-4 py-2 text-gray-700">
+                              {food.name}
+                            </td>
+                            <td className="whitespace-nowrap text-center  px-4 py-2 text-gray-700">
+                              {formatter(food.price)}
+                            </td>
+                            <td className="whitespace-nowrap text-center mx-auto px-4 py-2 text-gray-700">
+                              <div className="text-center mx-auto">
+                                <label
+                                  htmlFor={`Quantity-${food.id}`}
+                                  className="sr-only"
+                                >
+                                  Quantity
+                                </label>
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    type="button"
+                                    className="w-10 h-10 leading-10 text-gray-600 transition hover:opacity-75"
+                                    onClick={() =>
+                                      handleQuantityChange(food.id, -1)
+                                    }
                                   >
-                                    Quantity
-                                  </label>
-                                  <div className="flex items-center justify-center gap-1">
-                                    <button
-                                      type="button"
-                                      className="w-10 h-10 leading-10 text-gray-600 transition hover:opacity-75"
-                                      onClick={() =>
-                                        handleQuantityChange(food.id, -1)
-                                      }
-                                    >
-                                      &minus;
-                                    </button>
-                                    <input
-                                      id={`Quantity-${food.id}`}
-                                      value={foodQuantitiesUI[food.id] || 0}
-                                      onChange={(e) =>
-                                        handleQuantityChange(
-                                          food.id,
-                                          parseInt(e.target.value) || 0
-                                        )
-                                      }
-                                      className="h-10 w-16 rounded border-gray-200 text-center sm:text-sm"
-                                    />
-                                    <button
-                                      type="button"
-                                      className="w-10 h-10 leading-10 text-gray-600 transition hover:opacity-75"
-                                      onClick={() =>
-                                        handleQuantityChange(food.id, 1)
-                                      }
-                                    >
-                                      +
-                                    </button>
-                                  </div>
+                                    &minus;
+                                  </button>
+                                  <input
+                                    id={`Quantity-${food.id}`}
+                                    value={foodQuantitiesUI[food.id] || 0}
+                                    onChange={(e) =>
+                                      handleQuantityChange(
+                                        food.id,
+                                        parseInt(e.target.value) || 0
+                                      )
+                                    }
+                                    className="h-10 w-16 rounded border-gray-200 text-center sm:text-sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    className="w-10 h-10 leading-10 text-gray-600 transition hover:opacity-75"
+                                    onClick={() =>
+                                      handleQuantityChange(food.id, 1)
+                                    }
+                                  >
+                                    +
+                                  </button>
                                 </div>
-                              </td>
-                              <td className="whitespace-nowrap text-center px-4 py-2 text-gray-700">
-                                {quantiTybyFoodId[0]?.quantity > 0
-                                  ? formatter(
-                                      food.price * quantiTybyFoodId[0]?.quantity
-                                    )
-                                  : formatter(0)}
-                              </td>
-                            </tr>
-                          </>
+                              </div>
+                            </td>
+                            <td className="whitespace-nowrap text-center px-4 py-2 text-gray-700">
+                              {quantiTybyFoodId[0]?.quantity > 0
+                                ? formatter(
+                                  food.price * quantiTybyFoodId[0]?.quantity
+                                )
+                                : formatter(0)}
+                            </td>
+                          </tr>
                         );
                       }
                     })}
@@ -728,17 +793,15 @@ const BookingSeat = () => {
                 </span>
                 <div className="mt-4 space-x-2">
                   <button
-                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${
-                      selectedPaymentMethod === 1 ? "bg-gray-200" : ""
-                    }`}
+                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${selectedPaymentMethod === 1 ? "bg-gray-200" : ""
+                      }`}
                     onClick={() => handlePaymentMethodClick(1)}
                   >
                     Ngân hàng
                   </button>
                   <button
-                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${
-                      selectedPaymentMethod === 2 ? "bg-gray-200" : ""
-                    }`}
+                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${selectedPaymentMethod === 2 ? "bg-gray-200" : ""
+                      }`}
                     onClick={() => handlePaymentMethodClick(2)}
                   >
                     Momo
@@ -823,7 +886,7 @@ const BookingSeat = () => {
                 <h4 className=" space-x-1">
                   <span>Ghế ngồi</span>:{" "}
                   {selectedSeats.map((seat, index) => (
-                    <span className="font-semibold">
+                    <span key={index} className="font-semibold">
                       {getRowName(seat.row)}
                       {seat.column + 1}
                     </span>
@@ -858,31 +921,28 @@ const BookingSeat = () => {
             <div className="mx-auto">
               <button
                 onClick={onHandleNextStep}
-                className={` ${
-                  showPopCorn
-                    ? "hidden"
-                    : "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
-                }`}
+                className={` ${showPopCorn
+                  ? "hidden"
+                  : "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
+                  }`}
               >
                 Tiếp tục
               </button>
               <button
                 onClick={handlePaymentVnpay}
-                className={` ${
-                  showPopCorn && choosePayment === 1
-                    ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
-                    : "hidden"
-                }`}
+                className={` ${showPopCorn && choosePayment === 1
+                  ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
+                  : "hidden"
+                  }`}
               >
                 Thanh toán
               </button>
               <button
                 onClick={handlePaymentMomo}
-                className={` ${
-                  showPopCorn && choosePayment === 2
-                    ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
-                    : "hidden"
-                }`}
+                className={` ${showPopCorn && choosePayment === 2
+                  ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
+                  : "hidden"
+                  }`}
               >
                 Thanh toán
               </button>

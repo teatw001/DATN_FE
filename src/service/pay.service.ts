@@ -26,9 +26,17 @@ const payAPI = createApi({
       }),
       invalidatesTags: ["pay"],
     }),
-    PaymentMomo: builder.query({
-      query: (money) => `/momo_payment?&amount=${money}`,
-      providesTags: ["pay"],
+    // PaymentMomo: builder.query({
+    //   query: (money) => `/momo_payment?&amount=${money}`,
+    //   providesTags: ["pay"],
+    // }),
+    PaymentMomo: builder.mutation({
+      query: (amount :any) => ({
+        url: "/momo_payment/",
+        method: "POST",
+        body: amount,
+      }),
+      invalidatesTags: ["pay"],
     }),
   }),
 });
@@ -36,6 +44,6 @@ const payAPI = createApi({
 export const {
   useGetPaybyTranferQuery,
   useSendEmailMutation,
-  usePaymentMomoQuery,
+  usePaymentMomoMutation
 } = payAPI;
 export default payAPI;
