@@ -21,7 +21,7 @@ import {
   setTotalPrice,
 } from "../../../components/CinemaSlice/selectSeat";
 import {
-  useGetPaybyTranferQuery, usePaymentMomoMutation,
+  useGetPaybyTranferMutation, usePaymentMomoMutation,
 } from "../../../service/pay.service";
 import { useFetchFoodQuery } from "../../../service/food.service";
 import { useGetUserByIdQuery } from "../../../service/book_ticket.service";
@@ -78,7 +78,6 @@ const BookingSeat = () => {
   const idUser = localStorage.getItem("user_id");
   const { data: userId } = useGetUserByIdQuery(`${idUser}`);
   const [keepSeat, setkeepSeat] = useState<[]>([]);
-  const [avalibleSeat, setavalibleSeat] = useState<[]>([]);
   const [selectedSeatsCount, setSelectedSeatsCount] = useState(0);
   const { data: TimeDetails } = useFetchShowTimeQuery();
   const { data: TimeDetailbyId } = useGetShowTimeByIdQuery(id as string);
@@ -173,7 +172,6 @@ const BookingSeat = () => {
 
     window.location.href = `${paymentLinkMoMo?.data?.payUrl}`;
   };
-  
   const fetchData = async () => {
     try {
       const data = await checkSeat(id);
@@ -347,7 +345,7 @@ const BookingSeat = () => {
   const dayOfWeek = daysOfWeek[dateObject.getDay()];
   const formattedDate = `${day}/${month}/${year}`;
 
-  const paymentLink = useGetPaybyTranferQuery(totalMoney + totalComboAmount);
+  const paymentLink = useGetPaybyTranferMutation(totalMoney + totalComboAmount);
 
   const paymentLinkMoMo = usePaymentMomoMutation(totalMoney + totalComboAmount);
 
@@ -377,7 +375,6 @@ const BookingSeat = () => {
     // Update the state with the calculated total amount
     setTotalComboAmount(totalAmount);
   }, [foodQuantities, foods]);
-//!                                      -------------------fetchdata giữ ghế-------------------
 
   useEffect(() => {
     setFoodQuantitiesUI(
@@ -387,9 +384,8 @@ const BookingSeat = () => {
       }, {})
     );
   }, [foodQuantities]);
-  
+
   useEffect(() => {
-    fetchData();
     const seatBooked = (DataSeatBooked as any)?.data || [];
     // Lọc ra các phần tử có id_time_detail trùng với id từ URL params
     const filteredSeats = seatBooked.filter(

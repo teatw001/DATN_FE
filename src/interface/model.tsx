@@ -33,6 +33,19 @@ export interface ITime {
   id: string;
   time: string;
 }
+export interface IBookTicketUser {
+  time: string;
+  total_price: string;
+  film_name: string;
+  film_image: string;
+  id_code: string;
+  date: string;
+  time_td: string;
+  food_names: string | undefined;
+  chair_name: string;
+  chair_price: string;
+  cinema_name: string;
+}
 export interface IBookTicket {
   id: string;
   user_id: string;
@@ -67,6 +80,7 @@ export interface IUser {
   name: string;
   phone: number;
   email: string;
+  date_of_birth: string;
   password: string;
 }
 export interface ISeat {

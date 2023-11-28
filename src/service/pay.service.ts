@@ -15,10 +15,14 @@ const payAPI = createApi({
   }),
   tagTypes: ["pay"],
   endpoints: (builder) => ({
-    getPaybyTranfer: builder.query({
-      query: (money) => `/Payment?&amount=${money}`,
-      providesTags: ["pay"],
-    }),
+    getPaybyTranfer: builder.mutation({
+      query: (amount: any) => ({
+        url: "/Payment/",
+        method: "POST",
+        body: amount,
+      }),
+      invalidatesTags: ["pay"],
+      }),
     SendEmail: builder.mutation({
       query: () => ({
         url: "/send-book-ticket-details-email/",
@@ -26,12 +30,8 @@ const payAPI = createApi({
       }),
       invalidatesTags: ["pay"],
     }),
-    // PaymentMomo: builder.query({
-    //   query: (money) => `/momo_payment?&amount=${money}`,
-    //   providesTags: ["pay"],
-    // }),
     PaymentMomo: builder.mutation({
-      query: (amount :any) => ({
+      query: (amount: any) => ({
         url: "/momo_payment/",
         method: "POST",
         body: amount,
@@ -40,9 +40,8 @@ const payAPI = createApi({
     }),
   }),
 });
-
 export const {
-  useGetPaybyTranferQuery,
+  useGetPaybyTranferMutation,
   useSendEmailMutation,
   usePaymentMomoMutation
 } = payAPI;

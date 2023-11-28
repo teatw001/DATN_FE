@@ -107,12 +107,12 @@ const Login = () => {
             action="#"
           >
             <h1 className="text-3xl font-bold m-0 mb-4 tracking-tighter">
-              Register hire.
+              Đăng Ký Tài Khoản.
             </h1>
             <input
               className="bg-[#eee] rounded-lg accent-[#333] border-none py-2 px-4 my-2 w-full"
               type="text"
-              placeholder="Name"
+              placeholder="Họ Tên"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -124,9 +124,16 @@ const Login = () => {
               onChange={(e) => setRegisterEmail(e.target.value)}
             />
             <input
+              className="bg-[#eee] rounded-lg accent-[#333] border-none py-2 px-4 my-2 w-full"
+              type="text"
+              placeholder="Số Điện Thoại"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input
               className="bg-[#e4e3e3] rounded-lg accent-[#333] border-none py-2 px-4 my-2 w-full"
               type="password"
-              placeholder="Password"
+              placeholder="Mật Khẩu"
               value={registerPassword}
               onChange={(e) => setRegisterPassword(e.target.value)}
             />

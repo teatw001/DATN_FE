@@ -28,7 +28,9 @@ import ChoosePop from "./pages/Clients/ChoosePop/ChoosePop";
 import TicketBookingDetails from "./pages/Clients/Ticket-booking-details/TicketBookingDetails";
 import Dashbroad from "./pages/Admin/Dashbroad/Dashbroad";
 import PaymentMomo from "./pages/Clients/Payment/PaymentMomo";
-import Account from "./pages/Clients/Account/Account";
+import BookTicketUser from "./pages/Clients/BookTicketUser/BookTicketUser";
+import LayoutProfile from "./Layout/LayoutUser/LayoutProfile";
+import Profile from "./pages/Clients/Profile/Profile";
 function App() {
   const router = createBrowserRouter([
     {
@@ -77,7 +79,21 @@ function App() {
         },
         {
           path: "/info_account",
-          element: <Account />,
+          element: <LayoutProfile />,
+          children: [
+            {
+              path: "", // Đường dẫn mặc định khi truy cập /info_account
+              element: <Profile />,
+            },
+            {
+              path: "profile", // Đường dẫn mặc định khi truy cập /info_account
+              element: <Profile />,
+            },
+            {
+              path: "BookTicketUser",
+              element: <BookTicketUser />,
+            },
+          ]
         },
       ],
     },
