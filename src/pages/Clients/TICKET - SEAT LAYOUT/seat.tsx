@@ -1,34 +1,26 @@
 import { useEffect, useState } from "react";
 import Header from "../../../Layout/LayoutUser/Header";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
-import { InputNumber } from "antd";
+import { NavLink, useParams } from "react-router-dom";
 import { useFetchChairsQuery } from "../../../service/chairs.service";
-import {
-  useFetchShowTimeQuery,
-  useGetShowTimeByIdQuery,
-} from "../../../service/show.service";
-import { useGetProductByIdQuery } from "../../../service/films.service";
-import { Button, Modal, message } from "antd";
+import { useGetAllDataShowTimeByIdQuery } from "../../../service/show.service";
+import { message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { useGetCinemaByIdQuery } from "../../../service/brand.service";
-import { useGetTimeByIdQuery } from "../../../service/time.service";
 import Loading from "../../../components/isLoading/Loading";
-import { useGetALLCateDetailByIdQuery } from "../../../service/catedetail.service";
-import { useGetMovieRoomByIdQuery } from "../../../service/movieroom.service";
 import {
   setShowtimeId,
   setSelectSeats,
   setTotalPrice,
+  setComboFoods,
+  setChooseVoucher,
 } from "../../../components/CinemaSlice/selectSeat";
+
+import { useFetchFoodQuery } from "../../../service/food.service";
+import { useFetchVoucherQuery } from "../../../service/voucher.service";
+import * as dayjs from "dayjs";
 import {
   useGetAllSeatKepingsQuery,
   useKeptSeatMutation,
 } from "../../../service/seatkeping.service";
-import { useGetPaybyTranferMutation } from "../../../service/payVnpay.service";
-import { usePaymentMomoMutation } from "../../../service/payMoMo.service";
-import { useFetchFoodQuery } from "../../../service/food.service";
-import { useGetUserByIdQuery } from "../../../service/book_ticket.service";
-import { addSeat, checkSeat } from "../../../interface/api";
 enum SeatStatus {
   Available = "available",
   Booked = "booked",
@@ -49,7 +41,6 @@ interface SeatInfo {
 }
 
 const BookingSeat = () => {
-
   const { id } = useParams();
   const { data: dataAllByTime_Byid } = useGetAllDataShowTimeByIdQuery(
     id as string
@@ -62,6 +53,9 @@ const BookingSeat = () => {
   const { data: dataVouchers } = useFetchVoucherQuery();
   const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
   const { data: dataSeatKeping } = useGetAllSeatKepingsQuery(id);
+  // const seatKeepingbyUser = dataSeatKeping?.map((s: any) => s.seat);
+  // console.log(seatKeepingbyUser);
+
   const [keptSeat] = useKeptSeatMutation();
   const [selectedSeats, setSelectedSeats] = useState<SeatInfo[]>([]);
   const [totalComboAmount, setTotalComboAmount] = useState(0);
@@ -86,16 +80,7 @@ const BookingSeat = () => {
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(0);
   const [choosePayment, setChoosePayment] = useState(1);
-  const [totalComboAmount, setTotalComboAmount] = useState(0);
-  const [foodQuantities, setFoodQuantities] = useState(() => {
-    // Retrieve the values from local storage
-    const storedQuantities = localStorage.getItem("foodQuantities");
-
-    // Parse the JSON string or default to an empty array
-    return storedQuantities ? JSON.parse(storedQuantities) : [];
-  });
-
-  const [seatInfo, setSeatInfo] = useState<{
+const [seatInfo, setSeatInfo] = useState<{
     [key: string]: { quantity: number; totalPrice: number };
   }>({});
   const handlePaymentMethodClick = (method: any) => {
@@ -109,45 +94,21 @@ const BookingSeat = () => {
 
   const numRows = 12;
   const numColumns = 12;
-  const { id } = useParams();
-  const selectedCinema = useSelector((state: any) => state.selectedCinema);
-  const { data: DataSeatBooked, isLoading } = useFetchChairsQuery();
-  const { data: foods } = useFetchFoodQuery();
-  const idUser = localStorage.getItem("user_id");
-  const { data: userId } = useGetUserByIdQuery(`${idUser}`);
-  const [keepSeat, setkeepSeat] = useState<[]>([]);
-  const [selectedSeatsCount, setSelectedSeatsCount] = useState(0);
-  const { data: TimeDetails } = useFetchShowTimeQuery();
-  const { data: TimeDetailbyId } = useGetShowTimeByIdQuery(id as string);
-  const { data: CinemaDetailbyId } = useGetCinemaByIdQuery(
-    selectedCinema as string
-  );
-  const [showPopCorn, setShowPopCorn] = useState(false);
-  const onHandleNextStep = () => {
-    if (selectedSeatsCount === 0) {
-      message.error("Vui lòng chọn ít nhất một ghế để đặt vé.");
-      return;
-    }
 
-    setShowPopCorn(!showPopCorn);
-  };
-  const filterShow = (TimeDetails as any)?.data.filter(
-    (show: any) => `${show.id}` === id
-  );
+  const getuserId = localStorage.getItem("user");
+  const userId = JSON.parse(`${getuserId}`);
+
+  const [selectedSeatsCount, setSelectedSeatsCount] = useState(0);
+
+  const [showPopCorn, setShowPopCorn] = useState(false);
+
   const formatter = (value: number) =>
     `${value} ₫`.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  const idTime = filterShow?.map((time: any) => time.time_id).join(" ");
-  const idFilm = filterShow?.map((film: any) => film.film_id).join(" ");
-  const idRoom = filterShow?.map((film: any) => film.room_id).join(" ");
-  const { data: FilmById } = useGetProductByIdQuery(idFilm);
-  const { data: TimeById } = useGetTimeByIdQuery(idTime);
+
   const isVIPSeat = (row: number, column: number): boolean => {
     return row >= 1 && row <= 5 && column >= 2 && column <= 7;
   };
-  const { data: RoombyId } = useGetMovieRoomByIdQuery(idRoom as string);
-  const [foodQuantitiesUI, setFoodQuantitiesUI] = useState<{
-    [key: string]: number;
-  }>({});
+
   const parseSeatNames = (seatNamesString: any) => {
     return seatNamesString.split(",").map((name: any) => name.trim());
   };
@@ -170,8 +131,9 @@ const BookingSeat = () => {
         const type = isVIPSeat(rowIndex, columnIndex)
           ? SeatType.VIP
           : SeatType.normal;
-        const seatName = `${String.fromCharCode(65 + rowIndex)}${columnIndex + 1
-          }`;
+        const seatName = `${String.fromCharCode(65 + rowIndex)}${
+          columnIndex + 1
+        }`;
         const status = bookedSeatNames.includes(seatName)
           ? SeatStatus.Booked
           : SeatStatus.Available;
@@ -179,8 +141,8 @@ const BookingSeat = () => {
           status === SeatStatus.Booked
             ? 0
             : type === SeatType.VIP
-              ? 50000
-              : 45000; // Đặt giá cho từng loại ghế
+            ? 50000
+            : 45000; // Đặt giá cho từng loại ghế
         return {
           row: rowIndex,
           column: columnIndex,
@@ -191,7 +153,6 @@ const BookingSeat = () => {
       })
     )
   );
-
 
   useEffect(() => {
     const seatBooked = (DataSeatBooked as any)?.data || [];
@@ -205,16 +166,17 @@ const BookingSeat = () => {
     const bookedSeatNames = filteredSeats
       .map((item: any) => parseSeatNames(item.name))
       .flat();
+    console.log(bookedSeatNames);
 
     // Tạo một bản sao mới của mảng ghế
     const updatedSeats = [...seats];
     const parseSeatName = (seatNamesString: any) => {
       return seatNamesString.split(",").map((name: any) => name.trim());
     };
-    console.log(parseSeatName("A4"));
+
     // Duyệt qua các ghế đã đặt và cập nhật trạng thái của chúng
     bookedSeatNames.forEach((seatName: any) => {
-      const [rowIndex, columnIndex] = parseSeatName(seatName);
+const [rowIndex, columnIndex] = parseSeatName(seatName);
       if (
         rowIndex >= 0 &&
         rowIndex < numRows &&
@@ -236,30 +198,22 @@ const BookingSeat = () => {
       message.error("Vui lòng chọn phương thức thanh toán.");
       return;
     }
-
-    window.location.href = `${paymentLink?.data?.data}`;
-    // Rest of the code...
-
   };
+
   const handlePaymentMomo = () => {
     if (!selectedPaymentMethod) {
       message.error("Vui lòng chọn phương thức thanh toán.");
       return;
     }
-
-    window.location.href = `${paymentLinkMoMo?.data?.payUrl}`;
   };
-  const fetchData = async () => {
-    try {
-      const data = await checkSeat(id);
-        setkeepSeat(data);
-    } catch (error) {
-      console.error('Lỗi khi kiểm tra ghế đã đặt:', error);
-    }
+  if (dataSeatKeping) {
+    const tesytttt = (dataSeatKeping as any)?.find(
+      (data: any) => data?.id_user
+    );
 
-  };
+    console.log(`${tesytttt?.id_user}` === `${userId.id}`);
+  }
   const handleSeatClick = async (row: number, column: number) => {
-
     const updatedSeats = [...seats];
     const seat = updatedSeats[row][column];
     if (seat.status === SeatStatus.Available) {
@@ -286,16 +240,6 @@ const BookingSeat = () => {
         });
         setSelectedSeats([...selectedSeats, updatedSeats[row][column]]);
         setSelectedSeatsCount(selectedSeatsCount + 1);
-        //!----------------------------giữ ghế -----------------
-        const nameSeat = getRowName(updatedSeats[row][column].row) + updatedSeats[row][column + 1].column;
-        await addSeat({
-          id_time_detail: id,
-          id_user: idUser,
-          selected_seats: nameSeat
-        });
-        // if (numColumns === 10 ) {
-        //   setShowOuterSeatError(true);
-        // }
       } else {
         message.warning("Bạn chỉ có thể chọn tối đa 8 ghế trong một lần mua.");
       }
@@ -320,127 +264,93 @@ const BookingSeat = () => {
       });
       setSelectedSeats(selectedSeats.filter((selected) => selected !== seat));
       setSelectedSeatsCount(selectedSeatsCount - 1);
-      const nameSeat = getRowName(updatedSeats[row][column].row) + updatedSeats[row][column + 1].column;
-      await addSeat({
-        id_time_detail: id,
-        id_user: idUser,
-        selected_seats: nameSeat
-      });
     }
+    // if (seat.type === SeatType.normal && seat.status === SeatStatus.Available) {
+    //   updatedSeats[row][column] = {
+    //     ...seat,
+    //     status: SeatStatus.Kepted,
+//     price: 0, // Có thể đặt giá là 0 cho trạng thái giữ ghế
+    //   };
 
-    if (seat.type === SeatType.normal && seat.status === SeatStatus.Available) {
-      updatedSeats[row][column] = {
-        ...seat,
-        status: SeatStatus.Kepted,
-        price: 0, // Có thể đặt giá là 0 cho trạng thái giữ ghế
-      };
+    //   // Cập nhật mảng ghế trong trạng thái
+    //   setSeats(updatedSeats);
 
-      // Cập nhật mảng ghế trong trạng thái
-      setSeats(updatedSeats);
-
-      // Gọi mutation để đặt ghế vào trạng thái giữ ghế
-      const seatKeping = {
-        id_time_detail: id,
-        id_user: userId.id,
-        selected_seats: `${getRowName(row)}${column + 1}`,
-      };
-      await keptSeat(seatKeping);
-    }
+    //   // Gọi mutation để đặt ghế vào trạng thái giữ ghế
+    //   const seatKeping = {
+    //     id_time_detail: id,
+    //     id_user: userId.id,
+    //     selected_seats: `${getRowName(row)}${column + 1}`,
+    //   };
+    //   await keptSeat(seatKeping);
+    // }
     setSeats(updatedSeats);
   };
+  // if (dataSeatKeping) {
+  //   const tesytttt = (dataSeatKeping as any)?.map((data: any) => data?.seat);
+  //   console.log(tesytttt);
+  // }
+
   // useEffect(() => {
-  //   // ... (existing code)
+  //   const updatedSeats = [...seats];
   //   const parseSeatName = (seatNamesString: any) => {
   //     return seatNamesString.split(",").map((name: any) => name.trim());
   //   };
-  //   // Fetch and display seats kepted by user A
-  //   const keptedSeats = dataSeatKeping?.map((keptSeat: any) => {
-  //     const [row, column] = parseSeatName(keptSeat.seatName);
-  //     return {
-  //       row,
-  //       column,
-  //       status: SeatStatus.Kepted,
-  //       type: keptSeat.type,
-  //       price: keptSeat.price,
-  //     };
+
+  //   // Duyệt qua các ghế đã đặt và cập nhật trạng thái của chúng
+  //   seatKeepingbyUser?.forEach((seatName: any) => {
+  //     const [rowIndex, columnIndex] = parseSeatName(seatName);
+  //     updatedSeats[rowIndex][columnIndex].status = SeatStatus.Kepted;
   //   });
 
-  //   if (keptedSeats) {
-  //     const updatedSeats = [...seats];
-  //     keptedSeats.forEach((keptSeat: any) => {
-  //       updatedSeats[keptSeat.row][keptSeat.column] = keptSeat;
-  //     });
-  //     setSeats(updatedSeats);
-  //   }
-  // }, [dataSeatKeping, seats]);
+  //   // Cập nhật mảng ghế trong trạng thái
+  //   setSeats(updatedSeats);
+  // }, [dataSeatKeping]);
 
-  const handleQuantityChange = (foodId: string, change: number) => {
-    setFoodQuantities((prevQuantities: any) => {
-      // Ensure prevQuantities is an array, initialize as an empty array if not
-      const quantitiesArray = Array.isArray(prevQuantities)
-        ? prevQuantities
-        : [];
-
-      const index = quantitiesArray.findIndex(
-        (item: any) => item.id_food === foodId
-      );
-
-      if (index !== -1) {
-        // If the item exists, update its quantity
-        const updatedQuantities = quantitiesArray.map((item: any) =>
-          item.id_food === foodId
-            ? { ...item, quantity: Math.max(0, item?.quantity + change) }
-            : item
-        );
-
-        // Save the updated quantities to local storage
-        localStorage.setItem(
-          "foodQuantities",
-          JSON.stringify(updatedQuantities)
-        );
-
-        return updatedQuantities;
-      } else {
-        // If the item doesn't exist, add a new entry
-        const newQuantities = [
-          ...quantitiesArray,
-          { id_food: foodId, quantity: Math.max(0, change) },
-        ];
-
-        // Save the updated quantities to local storage
-        localStorage.setItem("foodQuantities", JSON.stringify(newQuantities));
-
-        return newQuantities;
-      }
-    });
-
-    // Update the food quantities UI state
+  const updateFoodQuantitiesUI = (
+    foodId: string,
+    change: number,
+    price: number
+  ) => {
     setFoodQuantitiesUI((prevQuantitiesUI) => {
-      const updatedQuantity = (prevQuantitiesUI[foodId] || 0) + change;
-      return { ...prevQuantitiesUI, [foodId]: Math.max(0, updatedQuantity) };
+      const updatedQuantity =
+        (prevQuantitiesUI[foodId]?.quantity || 0) + change;
+      const updatedPrice =
+        (prevQuantitiesUI[foodId]?.price || 0) + change * price;
+
+      setTotalComboAmount((prevTotal) => prevTotal + change * price); // Tổng số tiền của combo
+
+      return {
+        ...prevQuantitiesUI,
+        [foodId]: {
+          quantity: Math.max(0, updatedQuantity),
+          price: updatedPrice,
+        },
+      };
     });
   };
 
-  const totalMoney = selectedSeats.reduce(
-    (total, seat) => total + seat.price,
-    0
-  );
+  const handleQuantityChange = (
+    foodId: string,
+    change: number,
+    price: number
+  ) => {
+    // Call the function to update state after rendering
+    updateFoodQuantitiesUI(foodId, change, price);
+  };
+  useEffect(() => {
+    const updatedFoodQuantities = Object.keys(foodQuantitiesUI).map(
+      (foodId) => ({
+        id_food: foodId,
+        quantity: foodQuantitiesUI[foodId]?.quantity,
+        price: foodQuantitiesUI[foodId]?.price,
+      })
+    );
 
-
-  
     setFoodQuantities(updatedFoodQuantities);
   }, [foodQuantitiesUI]);
-
-  //!           ----------------------------call redux toolkit---------------------------
-  const paymentLink = useGetPaybyTranferMutation(totalMoney + totalComboAmount);
-  const paymentLinkMoMo = usePaymentMomoMutation(totalMoney + totalComboAmount);
-
   const selectedSeatsInSelectedState = selectedSeats.filter(
     (seat) => seat.status === SeatStatus.Selected
   );
-  const getRowName = (row: number): string => {
-    return String.fromCharCode(65 + row);
-  };
 
   const seatNames = selectedSeatsInSelectedState
     .map((seat) => `${getRowName(seat.row)}${seat.column + 1}`)
@@ -451,7 +361,8 @@ const BookingSeat = () => {
   if (isLoading) {
     return <Loading />; // Hoặc bạn có thể hiển thị thông báo "Loading" hoặc hiển thị một spinner
   }
-  const date = (TimeDetailbyId as any)?.data.date;
+  const date = dataAllByTime_Byid?.date;
+
   const dateObject = new Date(date);
   const daysOfWeek = [
     "CHỦ NHẬT",
@@ -460,7 +371,7 @@ const BookingSeat = () => {
     "THỨ TƯ",
     "THỨ NĂM",
     "THỨ SÁU",
-    "THỨ BẢY",
+"THỨ BẢY",
   ];
   const day = String(dateObject.getDate()).padStart(2, "0");
   const month = String(dateObject.getMonth() + 1).padStart(2, "0");
@@ -469,104 +380,174 @@ const BookingSeat = () => {
   const dayOfWeek = daysOfWeek[dateObject.getDay()];
   const formattedDate = `${day}/${month}/${year}`;
 
-
   const selectedVoucherInfo = (dataVouchers as any)?.data.find(
     (vc: any) => vc.id === selectedVoucher
   );
+  const onHandleNextStep = () => {
+    if (selectedSeatsCount === 0) {
+      message.error("Vui lòng chọn ít nhất một ghế để đặt vé.");
+      return;
+    }
+    const seatNearOutermost = selectedSeats.find((seat) => seat.column === 10);
 
-  const paymentLinkMoMo = usePaymentMomoMutation(totalMoney + totalComboAmount);
-
-  dispatch(setTotalPrice(totalMoney + totalComboAmount));
-  const findIdPopCorn = localStorage.getItem("foodQuantities");
-  const parsedPopCorn = findIdPopCorn ? JSON.parse(findIdPopCorn) : [];
-
-
-  useEffect(() => {
-    // Initialize the total amount
-    let totalAmount = 0;
-
-    // Iterate through the combo items and calculate the total amount
-    (foods as any)?.data.forEach((food: any) => {
-      const quantiTybyFoodId = parsedPopCorn.filter(
-        (pop: any) => pop.id_food === food.id
+    if (seatNearOutermost) {
+      const NearSeatOutermost = seatNearOutermost?.row;
+      const test3 = seats[NearSeatOutermost].find(
+        (seat) =>
+          seat.row === NearSeatOutermost &&
+          seat.column === seatNearOutermost?.column + 1
       );
+      console.log(test3);
+      if (seatNearOutermost && test3?.status === "available") {
+        message.error(
+          "Bạn không được bỏ trống ghế " +
+            getRowName(seatNearOutermost.row) +
+            (seatNearOutermost.column + 2)
+        );
+        return;
+      }
+    }
 
-      const itemTotal =
-        quantiTybyFoodId[0]?.quantity > 0
-          ? food.price * quantiTybyFoodId[0]?.quantity
-          : 0;
+    const findSeats = () => {
+      for (let i = 0; i < selectedSeats.length - 1; i++) {
+        const seat1 = selectedSeats[i];
 
-      totalAmount += itemTotal;
-    });
+        for (let j = i + 1; j < selectedSeats.length; j++) {
+          const seat2 = selectedSeats[j];
 
-    // Update the state with the calculated total amount
-    setTotalComboAmount(totalAmount);
-  }, [foodQuantities, foods]);
-
-  useEffect(() => {
-    setFoodQuantitiesUI(
-      foodQuantities.reduce((acc: any, food: any) => {
-        acc[food.id_food] = food?.quantity;
-        return acc;
-      }, {})
-    );
-  }, [foodQuantities]);
-
-  useEffect(() => {
-    const seatBooked = (DataSeatBooked as any)?.data || [];
-    // Lọc ra các phần tử có id_time_detail trùng với id từ URL params
-    const filteredSeats = seatBooked.filter(
-      (item: any) => `${item.id_time_detail}` === id
-    );
-
-    // Tạo một danh sách tên ghế từ filteredSeats
-    const bookedSeatNames = filteredSeats
-      .map((item: any) => parseSeatNames(item.name))
-      .flat();
-
-    // Tạo một bản sao mới của mảng ghế
-    const updatedSeats = [...seats];
-    keepSeat?.forEach((seatName: any) => {
-      const [rowIndex, columnIndex] = parseSeatName(seatName);
-      if (
-        rowIndex >= 0 &&
-        rowIndex < numRows &&
-        columnIndex >= 0 &&
-        columnIndex < numColumns 
-        
-      ) {
-        if (updatedSeats[rowIndex][columnIndex].status === SeatStatus.Available) {
-          updatedSeats[rowIndex][columnIndex].status = SeatStatus.kepted;
+          if (
+            seat1.row === seat2.row &&
+            Math.abs(seat1.column - seat2.column) === 2
+          ) {
+            return [seat1, seat2];
+          }
         }
       }
-    });
-    // Duyệt qua các ghế đã đặt và cập nhật trạng thái của chúng
-    bookedSeatNames.forEach((seatName: any) => {
-      const [rowIndex, columnIndex] = parseSeatName(seatName);
-      if (
-        rowIndex >= 0 &&
-        rowIndex < numRows &&
-        columnIndex >= 0 &&
-        columnIndex < numColumns
-      ) {
-        updatedSeats[rowIndex][columnIndex].status = SeatStatus.Booked;
+
+      return null;
+    };
+
+    const result = findSeats();
+    if (result) {
+      const rowCheck = result
+        .filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.row === item.row)
+        )
+        .map((item) => item.row)[0];
+
+      const seatBetween = seats[rowCheck].find(
+        (seat: any) =>
+          seat.row === rowCheck &&
+          seat.column === (result[0]?.column + result[1]?.column) / 2
+      );
+      console.log(seatBetween);
+      if (result && seatBetween?.status === "available") {
+        message.error(
+          "Bạn không được bỏ trống ghế " +
+            getRowName(seatBetween.row) +
+            (seatBetween.column + 1)
+        );
+        return;
       }
-      
-    });
+    }
+    if (selectedSeats) {
+      const rowseatCheck = selectedSeats
+        .filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.row === item.row)
+        )
+        .map((item) => item.row)[0];
+      const seatChoosing = selectedSeats.filter(
+        (item, index, self) =>
+          index === self.findIndex((t) => t.row === item.row)
+      );
+      console.log(seatChoosing);
 
-    setSeats(updatedSeats);
-    // Cập nhật mảng ghế trong trạng thái
-    console.log(keepSeat);
+      const seat2 = selectedSeats
+        .filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.row === item.row)
+        )
+        .map((item) => item.column)[0];
+console.log(seat2);
 
-  }, [(DataSeatBooked as any)?.data, keepSeat]);
+      const seatFinded = seats[rowseatCheck].map((s) => s.column);
+
+      const findSeats = () => {
+        const result = [];
+
+        for (let i = 0; i < seatFinded.length; i++) {
+          if (seat2 && Math.abs(seat2 - seatFinded[i]) === 2) {
+            result.push(seatFinded[i]);
+          }
+        }
+
+        return result.length > 0 ? result : null;
+      };
+
+      const testtt = findSeats();
+      console.log(testtt);
+      if (testtt && seatChoosing) {
+        if (seats[rowseatCheck][testtt[1]]?.status === "booked") {
+          const seatBetween = seats[rowseatCheck].find(
+            (seat: any) =>
+              seat.row === rowseatCheck &&
+              seat.column ===
+                (seats[rowseatCheck][testtt[1]]?.column +
+                  seatChoosing[0]?.column) /
+                  2
+          );
+          console.log(seatBetween);
+
+          if (
+            (seats[rowseatCheck][testtt[0]]?.status === "booked" ||
+              seats[rowseatCheck][testtt[1]]?.status === "booked") &&
+            seatBetween?.status === "available"
+          ) {
+            message.error(
+              "Bạn không được bỏ trống ghế " +
+                getRowName(seatBetween.row) +
+                (seatBetween.column + 1)
+            );
+            return;
+          }
+        } else if (seats[rowseatCheck][testtt[0]]?.status === "booked") {
+          const seatBetween = seats[rowseatCheck].find(
+            (seat: any) =>
+              seat.row === rowseatCheck &&
+              seat.column ===
+                (seats[rowseatCheck][testtt[0]]?.column +
+                  seatChoosing[0]?.column) /
+                  2
+          );
+          console.log(seatBetween);
+
+          if (
+            (seats[rowseatCheck][testtt[0]]?.status === "booked" ||
+              seats[rowseatCheck][testtt[1]]?.status === "booked") &&
+            seatBetween?.status === "available"
+          ) {
+            message.error(
+              "Bạn không được bỏ trống ghế " +
+                getRowName(seatBetween.row) +
+                (seatBetween.column + 1)
+            );
+            return;
+          }
+        }
+      }
+    }
+    setShowPopCorn(!showPopCorn);
+  };
   return (
     <>
       <Header />
 
       <div className="py-2 max-w-6xl border-t-2 my-20 border-cyan-500 shadow-xl shadow-cyan-500/50 text-center mx-auto bg-white rounded-xl">
         <h2 className="font-semibold ">
-          THÔNG TIN ĐẶT VÉ - {(CinemaDetailbyId as any)?.data.name} -{" "}
-          {dayOfWeek}, NGÀY {formattedDate}, {(TimeById as any)?.data.time}
+          THÔNG TIN ĐẶT VÉ - {dataAllByTime_Byid?.name_cinema} - {dayOfWeek},
+          NGÀY {formattedDate}, {dataAllByTime_Byid?.time}
         </h2>
       </div>
       <section className="grid grid-cols-4 gap-4 max-w-6xl mx-auto ">
@@ -575,7 +556,7 @@ const BookingSeat = () => {
             <img src="/ic-screen.png/" alt="" />
             <div className="status Seat flex space-x-[20px] items-center mx-auto  justify-center max-w-5xl">
               <div className="items-center flex ">
-                <div className=" text-[#FFFFFF] px-6 py-5  bg-[#EE2E24] rounded-lg inline-block"></div>
+<div className=" text-[#FFFFFF] px-6 py-5  bg-[#EE2E24] rounded-lg inline-block"></div>
                 <span className="text-[17px] text-[#8E8E8E] mx-2">
                   Ghế đã bán
                 </span>
@@ -618,13 +599,8 @@ const BookingSeat = () => {
                             infoSeat.type === SeatType.normal && (
                               <span>
                                 <img
+                                  className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
                                   src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAr0lEQVR4nO2QQQrCMBBFc4EWdO+6Z5FuCsVLSsE72Eu4rt0q6AWeBFIRaWxnmkKlecsh89/kGxNZLcAOqIAncuzOCcg00hvTudssidj+NBRHiVhTr4+HRByUKP5VdQIUwGVCww1Q2qzRVX8csHEBGulWIsqBFrgCezc7KMSlL68X9+B9tZulCnHiy+vle9s3H2Iob/liLf8nDo2J4o71Vm0CM0ZcA+cZxPUcuZFl8wJRIS97SX64DQAAAABJRU5ErkJggg=="
                                 />
                               </span>
@@ -633,14 +609,9 @@ const BookingSeat = () => {
                             infoSeat.type === SeatType.normal && (
                               <span>
                                 <img
+                                  className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
-                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAzElEQVR4nO2UTQrCMBCF3wUUdO/as4gboXhJEbyDvYLQZLryZ6ugF3ilVVGhwSRtpZJ8MJuSvi8zHQpEwiXnBJprCG8Q0rHKdzbIOHWXCs8ews/SvFRZ1tw7bSZ9yVf2Yr/xmsRXFzFbLWvCE2ccQHEBoWrwbQ8QJlWWM3uOHgHu0h3H9iLNOYQnaB6hOKue5Vx6dJwY82opD7zfukQ4dBY/x1uXV4tpKXyXyXrJpG9iX/5PLL/6kUgUM5RRt418F6cQbjsQp53kRnpNAYGXZLhQ5IrJAAAAAElFTkSuQmCC"
+src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAzElEQVR4nO2UTQrCMBCF3wUUdO/as4gboXhJEbyDvYLQZLryZ6ugF3ilVVGhwSRtpZJ8MJuSvi8zHQpEwiXnBJprCG8Q0rHKdzbIOHWXCs8ews/SvFRZ1tw7bSZ9yVf2Yr/xmsRXFzFbLWvCE2ccQHEBoWrwbQ8QJlWWM3uOHgHu0h3H9iLNOYQnaB6hOKue5Vx6dJwY82opD7zfukQ4dBY/x1uXV4tpKXyXyXrJpG9iX/5PLL/6kUgUM5RRt418F6cQbjsQp53kRnpNAYGXZLhQ5IrJAAAAAElFTkSuQmCC"
                                 />
                               </span>
                             )}
@@ -648,13 +619,8 @@ const BookingSeat = () => {
                             infoSeat.type === SeatType.VIP && (
                               <span>
                                 <img
+                                  className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
                                   src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA5ElEQVR4nO2SsQ4BMRjHuxhJ2LyKMN0kCMnFU/AaEk+FuMHGargJT3Bn/0npQu6qpT2XuN/UfP33+7VfKkRFGQFqwBzYASmQqPVM7vmStoED+exl5lvJGNgAVz5Hnl0DI1PpEvcsTF7qi6FOLMdrSgfoWuRXOnFqIZC1nkU+0YmxEGCbFxpxHZgAR9xxAkLZW/vB1AWa6oALaStPMgAuKngG+qo+dSAOcx08Fk+3VOGGA/F9vJkOIH5Nv/lsxmj6xLIY/EAcZG4Ix+T2L43YN6IS/9+ohWfIEEfAtgBxVISnohzcAJ9YNflpnJMiAAAAAElFTkSuQmCC"
                                 />
                               </span>
@@ -663,13 +629,8 @@ const BookingSeat = () => {
                             infoSeat.type === SeatType.VIP && (
                               <span>
                                 <img
+                                  className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
                                   src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABDklEQVR4nO2SPUoDURRGv8ZSQTu3IlqlEhWF4Cp0G4Kr0mAKGzGN6Lt30mhcQUx/JGNik3kzI/PDgHPgg+G9O/e8P6mnkzyxJeNaxqOcLznz9Dtwlc41wiv7ciZyyIzxnNZUIuFcxkjOIioqzkLGvZyzclLjtoIslpvindYvXec0b7ej0o0SDhQ4LF1v3MXFPy+1nGA5Zhz9YUHzPDGlBbHk1Ud5Y1uBCzmhtrs1PuQM096FvLO7+qG69IW9bIlxIudzVThT4DgdT7isYcfDuMOYbaxyibNTWbw+XstyGNPoI6gqjvUxplJg0Lo4MMieqBuP9e+M2BvOL73Y/81RN41visdyHloQj1vx9HSCb4vVGyTN161SAAAAAElFTkSuQmCC"
                                 />
                               </span>
@@ -680,7 +641,7 @@ const BookingSeat = () => {
                                 <img
                                   className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA1UlEQVR4nO2UQQoCMQxF/wUUdO/as4gbYfCSIngHvYRrdaugC0loSqSiMItW2zrKyPRDNmXmv+TTFCjqrK6KEVssSXBhC02pxz8rUoyToSQ4pgI9DZycVzTYTfoptFaLaHBOvC+mPqdMrE1WAQelih4ZzFiwzY5YsCODynlFR11rYOAMcqCqGEaDyGDKggML9mQwuV80wTz5JhtUIT+v3Af1rt2ZKvqp4Ge8Pj+vQmuQuz7Ra8VtA+fq/8D8q6eTC9h2JWo0rLe+JNiQYN00+Fu+Re3WDfJnklf/Hbx3AAAAAElFTkSuQmCC"
+src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA1UlEQVR4nO2UQQoCMQxF/wUUdO/as4gbYfCSIngHvYRrdaugC0loSqSiMItW2zrKyPRDNmXmv+TTFCjqrK6KEVssSXBhC02pxz8rUoyToSQ4pgI9DZycVzTYTfoptFaLaHBOvC+mPqdMrE1WAQelih4ZzFiwzY5YsCODynlFR11rYOAMcqCqGEaDyGDKggML9mQwuV80wTz5JhtUIT+v3Af1rt2ZKvqp4Ge8Pj+vQmuQuz7Ra8VtA+fq/8D8q6eTC9h2JWo0rLe+JNiQYN00+Fu+Re3WDfJnklf/Hbx3AAAAAElFTkSuQmCC"
                                 />
                               </span>
                             )}
@@ -698,13 +659,8 @@ const BookingSeat = () => {
                             infoSeat.type === SeatType.normal && (
                               <span>
                                 <img
+                                  className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
                                   src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAyElEQVR4nO2UQQrCMBRE5wJW2ua7c+1ZxI1QvKQI3kEv4VrdKtgLTKkpFKSR5hul0gzMJoR5yZAfIGq0ItI5YXaElITQ0yVh9kS+UEDlpgC++l5neYCfN2Ugbz3AqnpdfviAGdIR/KbqfELM1oScPqj4TEhRZ/Wuuj3ANG0CFNAk8wCZFSFXQi6EWTYPbaMAF668TtkN7antWpb4g229XXmdco2Bdnx6jxWHBtbq/8D81dfJCMZYqkZg9QCbIyGH8GDzldyoYasCCEEvQA5QsjIAAAAASUVORK5CYII="
                                 />
                               </span>
@@ -713,44 +669,9 @@ const BookingSeat = () => {
                             infoSeat.type === SeatType.VIP && (
                               <span>
                                 <img
+                                  className="scale-120 inline-block ml-10 mt-5"
                                   title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
-                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UwWoCMRRF76ZLp6jvDfgroitXpYqC9CvsbxT8Klvqwl3dunBV/YLR/ZU400WpiRMnIwOdCw8CuXknuQkBalVRBB4IfSVkRciB0CQd68zMlQSVDiFrQmmpL+MpCInHhH4QcnSArtR57TvRHuU92fx2mLXe8pw0NPQngaEDbOLN3axLaM/Dv3DFfPAA9Ajpe/gT14npAaCvH3Zwu0HEE0I3Ae/3m9Cp6e18YOkGHpvZggDQqGW712dC95lxR8hTFvtLAPDUyuB58HuXqbkVFQen8V5kELK1PYKiYHsf2ZpPY3B/cDy4OIHAsvavDJglF2ow/13UKFn8C5YloZ/lg+UunFrV0Amvia/Scg88fQAAAABJRU5ErkJggg=="
-                                />
-                              </span>
-                            )}
-                          {infoSeat.status === SeatStatus.kepted &&
-                            infoSeat.type === SeatType.normal && (
-                              <span>
-                                <img
-                                  title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
-                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA1UlEQVR4nO2UQQoCMQxF/wUUdO/as4gbYfCSIngHvYRrdaugC0loSqSiMItW2zrKyPRDNmXmv+TTFCjqrK6KEVssSXBhC02pxz8rUoyToSQ4pgI9DZycVzTYTfoptFaLaHBOvC+mPqdMrE1WAQelih4ZzFiwzY5YsCODynlFR11rYOAMcqCqGEaDyGDKggML9mQwuV80wTz5JhtUIT+v3Af1rt2ZKvqp4Ge8Pj+vQmuQuz7Ra8VtA+fq/8D8q6eTC9h2JWo0rLe+JNiQYN00+Fu+Re3WDfJnklf/Hbx3AAAAAElFTkSuQmCC"
-                                />
-                              </span>
-                            )}
-                          {infoSeat.status === SeatStatus.kepted &&
-                            infoSeat.type === SeatType.VIP && (
-                              <span>
-                                <img
-                                  title="..."
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "40px",
-                                    marginTop: "20px",
-                                    transform: "scale(1.2)",
-                                  }}
-                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABIUlEQVR4nO2SsUoDQRCGv8ZSQTtfRbRKJSoKwafQ1xB8Kg2mSKetRSrjEySBm72dMLLxbMLtZfXuwoH3w8CyOzvf7j8DvbooM/Yy5V6UiSgLUeZhnSl34awV6NI4FuXNrbCyEOU15NSCiOdalJEoyxhoW6zvKs/iuUqCuhWPf4VVxMPWn7YA/XbAcxkHK6PUQrlxkhunv4A/VYEXqYCwlxtnqfmizKv6a6mACiei+cRkxr54bpzy3lh/lQ/xDEPtygErHnAYLjQBNeOovK+eC6d8Fokz8ZyvbVduG5jkYZThlNnmK4tfH9QF/9hbynDKNDYEdcHROsqUzDPYNTjzDEoPaFjR+p0Bu5aDHuz+ndW0LLfJEWUsykvbYNkRp1c39AVmSVDybGInBwAAAABJRU5ErkJggg=="
+src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UwWoCMRRF76ZLp6jvDfgroitXpYqC9CvsbxT8Klvqwl3dunBV/YLR/ZU400WpiRMnIwOdCw8CuXknuQkBalVRBB4IfSVkRciB0CQd68zMlQSVDiFrQmmpL+MpCInHhH4QcnSArtR57TvRHuU92fx2mLXe8pw0NPQngaEDbOLN3axLaM/Dv3DFfPAA9Ajpe/gT14npAaCvH3Zwu0HEE0I3Ae/3m9Cp6e18YOkGHpvZggDQqGW712dC95lxR8hTFvtLAPDUyuB58HuXqbkVFQen8V5kELK1PYKiYHsf2ZpPY3B/cDy4OIHAsvavDJglF2ow/13UKFn8C5YloZ/lg+UunFrV0Amvia/Scg88fQAAAABJRU5ErkJggg=="
                                 />
                               </span>
                             )}
@@ -763,7 +684,7 @@ const BookingSeat = () => {
             </div>
           </section>
         </section>
-        <section className={`${showPopCorn ? "col-span-3" : "hidden "}`}>
+        <section className={`${showPopCorn ? "col-span-3" : " hidden"}`}>
           <section className="bg-white rounded-lg p-8 space-y-4">
             <main className="max-w-5xl mx-auto shadow-lg  shadow-cyan-500/50 px-4 py-8 sm:px-6 lg:px-8">
               <div className="mb-8">
@@ -803,14 +724,14 @@ const BookingSeat = () => {
                       <div className="flex w-[40%] justify-between">
                         <div className="">Số lượng x{info?.quantity}</div>
                         <div className="">
-                          Tổng tiền {formatter(info.totalPrice)}
+Thành tiền {formatter(info.totalPrice)}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <span className="block  text-lg font-semibold text-red-600">
+              <span className="block mb-4 text-lg font-semibold text-red-600">
                 COMBO ƯU ĐÃI
               </span>
               <div className="mb-8 border rounded-[10px]">
@@ -846,13 +767,10 @@ const BookingSeat = () => {
                         Thành tiền
                       </th>
                     </tr>
-                    {(foods as any)?.data.map((food: any) => {
-                      if (parsedPopCorn) {
-                        const quantiTybyFoodId = parsedPopCorn.filter(
-                          (pop: any) => pop.id_food === food.id
-                        );
-                        return (
-                          <tr key={food.id}>
+                    {(foods as any)?.data.map((food: any, index: any) => {
+                      return (
+                        <>
+                          <tr key={index}>
                             <td className="whitespace-nowrap text-center px-4 py-2 font-medium text-gray-900">
                               <img
                                 src={food.image}
@@ -870,7 +788,7 @@ const BookingSeat = () => {
                               <div className="text-center mx-auto">
                                 <label
                                   htmlFor={`Quantity-${food.id}`}
-                                  className="sr-only"
+className="sr-only"
                                 >
                                   Quantity
                                 </label>
@@ -879,18 +797,29 @@ const BookingSeat = () => {
                                     type="button"
                                     className="w-10 h-10 leading-10 text-gray-600 transition hover:opacity-75"
                                     onClick={() =>
-                                      handleQuantityChange(food.id, -1)
+                                      handleQuantityChange(
+                                        food.id,
+                                        -1,
+                                        food.price
+                                      )
+                                    }
+                                    disabled={
+                                      foodQuantitiesUI[food.id]?.quantity ===
+                                        0 || !foodQuantitiesUI[food.id]
                                     }
                                   >
                                     &minus;
                                   </button>
                                   <input
                                     id={`Quantity-${food.id}`}
-                                    value={foodQuantitiesUI[food.id] || 0}
+                                    value={
+                                      foodQuantitiesUI[food.id]?.quantity || 0
+                                    }
                                     onChange={(e) =>
                                       handleQuantityChange(
                                         food.id,
-                                        parseInt(e.target.value) || 0
+                                        parseInt(e.target.value) || 0,
+                                        food.price
                                       )
                                     }
                                     className="h-10 w-16 rounded border-gray-200 text-center sm:text-sm"
@@ -899,7 +828,11 @@ const BookingSeat = () => {
                                     type="button"
                                     className="w-10 h-10 leading-10 text-gray-600 transition hover:opacity-75"
                                     onClick={() =>
-                                      handleQuantityChange(food.id, 1)
+                                      handleQuantityChange(
+                                        food.id,
+                                        1,
+                                        food.price
+                                      )
                                     }
                                   >
                                     +
@@ -908,27 +841,78 @@ const BookingSeat = () => {
                               </div>
                             </td>
                             <td className="whitespace-nowrap text-center px-4 py-2 text-gray-700">
-                              {quantiTybyFoodId[0]?.quantity > 0
+                              {foodQuantitiesUI[food.id]?.quantity > 0
                                 ? formatter(
-                                  food.price * quantiTybyFoodId[0]?.quantity
-                                )
+                                    foodQuantitiesUI[food.id]?.quantity *
+food.price
+                                  )
                                 : formatter(0)}
                             </td>
                           </tr>
-                        );
-                      }
+                        </>
+                      );
                     })}
                   </thead>
                 </table>
               </div>
-
-              <div className="mb-8 flex justify-end">
-                <span className="block text-gray-500 text-sm">
-                  Tổng số tiền bỏng nước:{" "}
-                  <span className="text-red-500 text-lg ml-2">
-                    {formatter(totalComboAmount)}
-                  </span>
+              <div className="mb-8">
+                <span className="block mb-4 font-medium text-lg text-red-600 border-b-2 border-red-600">
+                  MÃ KHUYẾN MÃI
                 </span>
+                <div className="grid grid-cols-1 h-32 overflow-y-auto gap-4 lg:grid-cols-2 lg:gap-6">
+                  {(dataVouchers as any)?.data.map((vc: any) => {
+                    const formattedEndDate = dayjs(vc.end_time).format(
+                      "DD/MM/YYYY"
+                    );
+                    const isSelected = selectedVoucher === vc.id;
+                    const borderClass = isSelected
+                      ? "border-2 border-red-600"
+                      : "border border-gray-200";
+                    const buttonText = isSelected ? "Hủy áp dụng" : "Áp dụng";
+                    const textClass = isSelected ? "text-red-600" : "black";
+                    return (
+                      <>
+                        <button
+                          key={vc.limit}
+                          onClick={() => onHandleChooseVC(vc.id, vc.code)}
+                          className={`h-30 m-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${borderClass}`}
+                        >
+                          <div className="space-y-1">
+                            {vc.limit === 2 ? (
+                              <h3 className="font-semibold text-base text-left">
+                                Mã {vc.code} Giảm {vc.percent}% tối đa{" "}
+                                {vc.price_voucher / 1000}k
+                              </h3>
+                            ) : (
+                              <h3 className="font-semibold text-base text-left">
+                                Mã {vc.code} Giảm {vc.price_voucher / 1000}k
+                              </h3>
+                            )}
+
+                            <p className="text-left">
+                              Áp dụng cho đơn hàng từ{" "}
+                              <span className="font-semibold">
+                                {vc.minimum_amount / 1000}k
+                              </span>
+                            </p>
+                            <div className="text-left">
+                              <span>HSD: </span>
+                              <span className="font-semibold">
+                                {formattedEndDate}
+                              </span>
+                            </div>
+                            <h3
+                              onClick={() => onHandleChooseVC(vc.id, vc.code)}
+                              className={`${textClass} text-right font-semibold`}
+>
+                              {buttonText}
+                            </h3>
+                          </div>
+                        </button>
+                      </>
+                    );
+                  })}
+                </div>
               </div>
               <div className="mb-8">
                 <span className="block font-medium text-lg text-red-600 border-b-2 border-red-600">
@@ -936,22 +920,23 @@ const BookingSeat = () => {
                 </span>
                 <div className="mt-4 space-x-2">
                   <button
-                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${selectedPaymentMethod === 1 ? "bg-gray-200" : ""
-                      }`}
+                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${
+                      selectedPaymentMethod === 1 ? "bg-gray-200" : ""
+                    }`}
                     onClick={() => handlePaymentMethodClick(1)}
                   >
                     Ngân hàng
                   </button>
                   <button
-                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${selectedPaymentMethod === 2 ? "bg-gray-200" : ""
-                      }`}
+                    className={`border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-600 ${
+                      selectedPaymentMethod === 2 ? "bg-gray-200" : ""
+                    }`}
                     onClick={() => handlePaymentMethodClick(2)}
                   >
                     Momo
                   </button>
                 </div>
               </div>
-
               <div className="mb-8 flex justify-between items-center">
                 <span className="text-sm">
                   Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý tuân theo Điều
@@ -964,13 +949,13 @@ const BookingSeat = () => {
         <section className="col-span-1">
           <div className="bg-[#F3F3F3] space-y-2 rounded-lg px-4 py-10 shadow-lg shadow-cyan-500/50">
             <img
-              src={(FilmById as any)?.data.image}
+              src={dataAllByTime_Byid?.image_film}
               alt=""
               className="block mx-auto w-[201px] shadow-lg shadow-cyan-500/50 rounded-2xl h-[295px]"
             />
             <div className="w-full text-center space-y-2">
               <h1 className=" text-[#03599d] font-semibold font-mono">
-                {(FilmById as any)?.data.name}
+                {dataAllByTime_Byid?.name_film}
               </h1>
               <span className="block text-center">2D Phụ đề</span>
             </div>
@@ -986,12 +971,12 @@ const BookingSeat = () => {
                   viewBox="0 0 16 16"
                 >
                   <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9V5.5z" />
-                  <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1h-3zm1.038 3.018a6.093 6.093 0 0 1 .924 0 6 6 0 1 1-.924 0zM0 3.5c0 .753.333 1.429.86 1.887A8.035 8.035 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5zM13.5 1c-.753 0-1.429.333-1.887.86a8.035 8.035 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1z" />
+<path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1h-3zm1.038 3.018a6.093 6.093 0 0 1 .924 0 6 6 0 1 1-.924 0zM0 3.5c0 .753.333 1.429.86 1.887A8.035 8.035 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5zM13.5 1c-.753 0-1.429.333-1.887.86a8.035 8.035 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1z" />
                 </svg>
                 <h4 className="">
                   Giờ chiếu:{" "}
                   <span className="font-semibold">
-                    {(TimeById as any)?.data.time}
+                    {dataAllByTime_Byid?.time}
                   </span>
                 </h4>
               </span>
@@ -1010,7 +995,7 @@ const BookingSeat = () => {
                 <h4 className="">
                   Phòng chiếu:{" "}
                   <span className="font-semibold">
-                    {(RoombyId as any)?.data.name}
+                    {dataAllByTime_Byid?.room_name}
                   </span>
                 </h4>
               </span>
@@ -1028,13 +1013,13 @@ const BookingSeat = () => {
                 </svg>
                 <h4 className=" space-x-1">
                   <span>Ghế ngồi</span>:{" "}
-                  {selectedSeats.map((seat, index) => (
-                    <span key={index} className="font-semibold">
+                  {selectedSeats.map((seat) => (
+                    <span className="font-semibold">
                       {getRowName(seat.row)}
                       {seat.column + 1}
                     </span>
                   ))}
-                </h4>
+</h4>
               </span>
               <span className="   mx-5 flex  space-x-2 items-center">
                 <svg
@@ -1051,12 +1036,22 @@ const BookingSeat = () => {
                 <h4 className="flex space-x-1">
                   <span>Tổng tiền </span>:{" "}
                   <span className="font-semibold">
-                    {formatter(
-                      selectedSeats.reduce(
-                        (total, seat) => total + seat.price,
-                        0
-                      ) + totalComboAmount
-                    )}
+                    {selectedVoucherInfo && console.log(selectedVoucherInfo)}
+                    {selectedVoucherInfo
+                      ? formatter(
+                          selectedSeats.reduce(
+                            (total, seat) => total + seat.price,
+                            0
+                          ) +
+                            totalComboAmount -
+                            selectedVoucherInfo.price_voucher
+                        )
+                      : formatter(
+                          selectedSeats.reduce(
+                            (total, seat) => total + seat.price,
+                            0
+                          ) + totalComboAmount
+                        )}
                   </span>
                 </h4>
               </span>
@@ -1064,35 +1059,37 @@ const BookingSeat = () => {
             <div className="mx-auto">
               <button
                 onClick={onHandleNextStep}
-                className={` ${showPopCorn
-                  ? "hidden"
-                  : "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
-                  }`}
+                className={` ${
+                  showPopCorn
+                    ? "hidden"
+                    : "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
+                }`}
               >
                 Tiếp tục
               </button>
               <button
                 onClick={handlePaymentVnpay}
-                className={` ${showPopCorn && choosePayment === 1
-                  ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
-                  : "hidden"
-                  }`}
+                className={` ${
+                  showPopCorn && choosePayment === 1
+                    ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
+                    : "hidden"
+                }`}
               >
                 Thanh toán
               </button>
               <button
                 onClick={handlePaymentMomo}
-                className={` ${showPopCorn && choosePayment === 2
-                  ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
-                  : "hidden"
-                  }`}
+                className={` ${
+                  showPopCorn && choosePayment === 2
+                    ? "hover:bg-[#EAE8E4] rounded-md my-2 hover:text-black bg-black text-[#FFFFFF] w-full text-center py-2 text-[16px]"
+                    : "hidden"
+                }`}
               >
                 Thanh toán
               </button>
             </div>
           </div>
         </section>
-
       </section>
       <hr className="mt-10 w-full border-2 border-[#F3F3F3]" />
     </>
