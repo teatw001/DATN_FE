@@ -21,8 +21,11 @@ import {
   setTotalPrice,
 } from "../../../components/CinemaSlice/selectSeat";
 import {
-  useGetPaybyTranferMutation, usePaymentMomoMutation,
-} from "../../../service/pay.service";
+  useGetAllSeatKepingsQuery,
+  useKeptSeatMutation,
+} from "../../../service/seatkeping.service";
+import { useGetPaybyTranferMutation } from "../../../service/payVnpay.service";
+import { usePaymentMomoMutation } from "../../../service/payMoMo.service";
 import { useFetchFoodQuery } from "../../../service/food.service";
 import { useGetUserByIdQuery } from "../../../service/book_ticket.service";
 import { addSeat, checkSeat } from "../../../interface/api";
@@ -30,7 +33,7 @@ enum SeatStatus {
   Available = "available",
   Booked = "booked",
   Selected = "selected",
-  kepted = "kepted",
+  Kepted = "kepted",
   Reserved = "Reserved",
 }
 enum SeatType {
@@ -46,6 +49,41 @@ interface SeatInfo {
 }
 
 const BookingSeat = () => {
+
+  const { id } = useParams();
+  const { data: dataAllByTime_Byid } = useGetAllDataShowTimeByIdQuery(
+    id as string
+  );
+  const getRowName = (row: number): string => {
+    return String.fromCharCode(65 + row);
+  };
+  const { data: DataSeatBooked, isLoading } = useFetchChairsQuery();
+  const { data: foods } = useFetchFoodQuery();
+  const { data: dataVouchers } = useFetchVoucherQuery();
+  const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
+  const { data: dataSeatKeping } = useGetAllSeatKepingsQuery(id);
+  const [keptSeat] = useKeptSeatMutation();
+  const [selectedSeats, setSelectedSeats] = useState<SeatInfo[]>([]);
+  const [totalComboAmount, setTotalComboAmount] = useState(0);
+  const [discountVoucher, setDiscountVoucher] = useState(0);
+  const [foodQuantities, setFoodQuantities] = useState<any[]>([]);
+  const [foodQuantitiesUI, setFoodQuantitiesUI] = useState<{
+    [key: string]: { quantity: number; price: number };
+  }>({});
+
+  const totalMoney = selectedSeats.reduce(
+    (total, seat) => total + seat.price,
+    0
+  );
+  const dispatch = useDispatch();
+
+  const onHandleChooseVC = (voucherId: string, voucherCode: string) => {
+    setSelectedVoucher(selectedVoucher === voucherId ? null : voucherId);
+    dispatch(setChooseVoucher(voucherCode));
+  };
+
+  dispatch(setComboFoods(foodQuantities));
+
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(0);
   const [choosePayment, setChoosePayment] = useState(1);
   const [totalComboAmount, setTotalComboAmount] = useState(0);
@@ -154,7 +192,45 @@ const BookingSeat = () => {
     )
   );
 
-  const [selectedSeats, setSelectedSeats] = useState<SeatInfo[]>([]);
+
+  useEffect(() => {
+    const seatBooked = (DataSeatBooked as any)?.data || [];
+
+    // Lọc ra các phần tử có id_time_detail trùng với id từ URL params
+    const filteredSeats = seatBooked.filter(
+      (item: any) => `${item.id_time_detail}` === id
+    );
+
+    // Tạo một danh sách tên ghế từ filteredSeats
+    const bookedSeatNames = filteredSeats
+      .map((item: any) => parseSeatNames(item.name))
+      .flat();
+
+    // Tạo một bản sao mới của mảng ghế
+    const updatedSeats = [...seats];
+    const parseSeatName = (seatNamesString: any) => {
+      return seatNamesString.split(",").map((name: any) => name.trim());
+    };
+    console.log(parseSeatName("A4"));
+    // Duyệt qua các ghế đã đặt và cập nhật trạng thái của chúng
+    bookedSeatNames.forEach((seatName: any) => {
+      const [rowIndex, columnIndex] = parseSeatName(seatName);
+      if (
+        rowIndex >= 0 &&
+        rowIndex < numRows &&
+        columnIndex >= 0 &&
+        columnIndex < numColumns
+      ) {
+        updatedSeats[rowIndex][columnIndex].status = SeatStatus.Booked;
+      }
+    });
+
+    // Cập nhật mảng ghế trong trạng thái
+    setSeats(updatedSeats);
+  }, [(DataSeatBooked as any)?.data]);
+
+  useEffect(() => {}, [foodQuantitiesUI, dispatch]);
+
   const handlePaymentVnpay = () => {
     if (!selectedPaymentMethod) {
       message.error("Vui lòng chọn phương thức thanh toán.");
@@ -163,6 +239,7 @@ const BookingSeat = () => {
 
     window.location.href = `${paymentLink?.data?.data}`;
     // Rest of the code...
+
   };
   const handlePaymentMomo = () => {
     if (!selectedPaymentMethod) {
@@ -179,6 +256,7 @@ const BookingSeat = () => {
     } catch (error) {
       console.error('Lỗi khi kiểm tra ghế đã đặt:', error);
     }
+
   };
   const handleSeatClick = async (row: number, column: number) => {
 
@@ -249,8 +327,52 @@ const BookingSeat = () => {
         selected_seats: nameSeat
       });
     }
+
+    if (seat.type === SeatType.normal && seat.status === SeatStatus.Available) {
+      updatedSeats[row][column] = {
+        ...seat,
+        status: SeatStatus.Kepted,
+        price: 0, // Có thể đặt giá là 0 cho trạng thái giữ ghế
+      };
+
+      // Cập nhật mảng ghế trong trạng thái
+      setSeats(updatedSeats);
+
+      // Gọi mutation để đặt ghế vào trạng thái giữ ghế
+      const seatKeping = {
+        id_time_detail: id,
+        id_user: userId.id,
+        selected_seats: `${getRowName(row)}${column + 1}`,
+      };
+      await keptSeat(seatKeping);
+    }
     setSeats(updatedSeats);
   };
+  // useEffect(() => {
+  //   // ... (existing code)
+  //   const parseSeatName = (seatNamesString: any) => {
+  //     return seatNamesString.split(",").map((name: any) => name.trim());
+  //   };
+  //   // Fetch and display seats kepted by user A
+  //   const keptedSeats = dataSeatKeping?.map((keptSeat: any) => {
+  //     const [row, column] = parseSeatName(keptSeat.seatName);
+  //     return {
+  //       row,
+  //       column,
+  //       status: SeatStatus.Kepted,
+  //       type: keptSeat.type,
+  //       price: keptSeat.price,
+  //     };
+  //   });
+
+  //   if (keptedSeats) {
+  //     const updatedSeats = [...seats];
+  //     keptedSeats.forEach((keptSeat: any) => {
+  //       updatedSeats[keptSeat.row][keptSeat.column] = keptSeat;
+  //     });
+  //     setSeats(updatedSeats);
+  //   }
+  // }, [dataSeatKeping, seats]);
 
   const handleQuantityChange = (foodId: string, change: number) => {
     setFoodQuantities((prevQuantities: any) => {
@@ -304,7 +426,15 @@ const BookingSeat = () => {
     0
   );
 
-  const dispatch = useDispatch();
+
+  
+    setFoodQuantities(updatedFoodQuantities);
+  }, [foodQuantitiesUI]);
+
+  //!           ----------------------------call redux toolkit---------------------------
+  const paymentLink = useGetPaybyTranferMutation(totalMoney + totalComboAmount);
+  const paymentLinkMoMo = usePaymentMomoMutation(totalMoney + totalComboAmount);
+
   const selectedSeatsInSelectedState = selectedSeats.filter(
     (seat) => seat.status === SeatStatus.Selected
   );
@@ -317,12 +447,6 @@ const BookingSeat = () => {
     .join(",");
   dispatch(setSelectSeats(seatNames));
   dispatch(setShowtimeId(id));
-
-  const parseSeatName = (seatName: string) => {
-    const row = seatName.charCodeAt(0) - "A".charCodeAt(0);
-    const column = parseInt(seatName.slice(1)) - 1;
-    return [row, column];
-  };
 
   if (isLoading) {
     return <Loading />; // Hoặc bạn có thể hiển thị thông báo "Loading" hoặc hiển thị một spinner
@@ -345,7 +469,10 @@ const BookingSeat = () => {
   const dayOfWeek = daysOfWeek[dateObject.getDay()];
   const formattedDate = `${day}/${month}/${year}`;
 
-  const paymentLink = useGetPaybyTranferMutation(totalMoney + totalComboAmount);
+
+  const selectedVoucherInfo = (dataVouchers as any)?.data.find(
+    (vc: any) => vc.id === selectedVoucher
+  );
 
   const paymentLinkMoMo = usePaymentMomoMutation(totalMoney + totalComboAmount);
 
@@ -544,6 +671,26 @@ const BookingSeat = () => {
                                     transform: "scale(1.2)",
                                   }}
                                   src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABDklEQVR4nO2SPUoDURRGv8ZSQTu3IlqlEhWF4Cp0G4Kr0mAKGzGN6Lt30mhcQUx/JGNik3kzI/PDgHPgg+G9O/e8P6mnkzyxJeNaxqOcLznz9Dtwlc41wiv7ciZyyIzxnNZUIuFcxkjOIioqzkLGvZyzclLjtoIslpvindYvXec0b7ej0o0SDhQ4LF1v3MXFPy+1nGA5Zhz9YUHzPDGlBbHk1Ud5Y1uBCzmhtrs1PuQM096FvLO7+qG69IW9bIlxIudzVThT4DgdT7isYcfDuMOYbaxyibNTWbw+XstyGNPoI6gqjvUxplJg0Lo4MMieqBuP9e+M2BvOL73Y/81RN41visdyHloQj1vx9HSCb4vVGyTN161SAAAAAElFTkSuQmCC"
+                                />
+                              </span>
+                            )}
+                          {infoSeat.status === SeatStatus.Kepted &&
+                            infoSeat.type === SeatType.normal && (
+                              <span>
+                                <img
+                                  className="scale-120 inline-block ml-10 mt-5"
+                                  title="..."
+                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA1UlEQVR4nO2UQQoCMQxF/wUUdO/as4gbYfCSIngHvYRrdaugC0loSqSiMItW2zrKyPRDNmXmv+TTFCjqrK6KEVssSXBhC02pxz8rUoyToSQ4pgI9DZycVzTYTfoptFaLaHBOvC+mPqdMrE1WAQelih4ZzFiwzY5YsCODynlFR11rYOAMcqCqGEaDyGDKggML9mQwuV80wTz5JhtUIT+v3Af1rt2ZKvqp4Ge8Pj+vQmuQuz7Ra8VtA+fq/8D8q6eTC9h2JWo0rLe+JNiQYN00+Fu+Re3WDfJnklf/Hbx3AAAAAElFTkSuQmCC"
+                                />
+                              </span>
+                            )}
+                          {infoSeat.status === SeatStatus.Kepted &&
+                            infoSeat.type === SeatType.VIP && (
+                              <span>
+                                <img
+                                  className="scale-120 inline-block ml-10 mt-5"
+                                  title="..."
+                                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABIUlEQVR4nO2SsUoDQRCGv8ZSQTtfRbRKJSoKwafQ1xB8Kg2mSKetRSrjEySBm72dMLLxbMLtZfXuwoH3w8CyOzvf7j8DvbooM/Yy5V6UiSgLUeZhnSl34awV6NI4FuXNrbCyEOU15NSCiOdalJEoyxhoW6zvKs/iuUqCuhWPf4VVxMPWn7YA/XbAcxkHK6PUQrlxkhunv4A/VYEXqYCwlxtnqfmizKv6a6mACiei+cRkxr54bpzy3lh/lQ/xDEPtygErHnAYLjQBNeOovK+eC6d8Fokz8ZyvbVduG5jkYZThlNnmK4tfH9QF/9hbynDKNDYEdcHROsqUzDPYNTjzDEoPaFjR+p0Bu5aDHuz+ndW0LLfJEWUsykvbYNkRp1c39AVmSVDybGInBwAAAABJRU5ErkJggg=="
                                 />
                               </span>
                             )}
@@ -945,6 +1092,7 @@ const BookingSeat = () => {
             </div>
           </div>
         </section>
+
       </section>
       <hr className="mt-10 w-full border-2 border-[#F3F3F3]" />
     </>

@@ -36,21 +36,7 @@ const persistConfig = {
   key: "root",
   storage,
   version: 1,
-  whitelist: [
-    "films",
-    "cates",
-    "cinemas",
-    "shows",
-    "selectedCinema",
-    "foods",
-    "auth",
-    "movies",
-    "catedetails",
-    "bkseats",
-    "users",
-    "pays",
-    "TKinformation",
-  ],
+  whitelist: ["selectedCinema", "pays", "TKinformation"],
 };
 
 const rootReducer = combineReducers({
