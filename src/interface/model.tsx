@@ -77,8 +77,10 @@ export interface IChairs {
   id_time_detail: string;
 }
 export interface IUser {
+  id: number,
   name: string;
   phone: number;
+  image: string | null;
   email: string;
   date_of_birth: string;
   password: string;

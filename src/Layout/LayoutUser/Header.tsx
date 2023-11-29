@@ -75,6 +75,7 @@ const Header: React.FC = () => {
               setTimeout(() => {
                 navigate("/");
               }, 1000);
+            window.location.reload();
           }}
         >
           {" "}

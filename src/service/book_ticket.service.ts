@@ -21,7 +21,7 @@ const bookTicketsAPI = createApi({
       providesTags: ["bookTicket"],
     }),
     getUserById: builder.query<IUser, number | string>({
-      query: (id) => `/users/${id}`,
+      query: (id) => `/user/${id}`,
       providesTags: ["bookTicket"],
     }),
     removeBookTicket: builder.mutation({

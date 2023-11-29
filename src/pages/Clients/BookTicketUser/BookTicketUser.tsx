@@ -22,7 +22,7 @@ export interface DataType {
 
 const BookTicketUser = () => {
     const idUser = localStorage.getItem("user_id");
-    const { data: fetchBookTicket } = useGetBookTicketByUserQuery(idUser);
+    const { data: fetchBookTicket } = useGetBookTicketByUserQuery(3);
     const formatter = (value: number) =>
         `${value} Vn₫`.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     // const { Search } = Input;
@@ -115,9 +115,6 @@ const BookTicketUser = () => {
                     <div>
                         <p className="whitespace-nowrap">
                             {text.data}
-                        </p>
-                        <p className="whitespace-nowrap">
-                            <b>Tổng Tiền</b>: {formatter(Number(text.price))}
                         </p>
                     </div>
                 )}
