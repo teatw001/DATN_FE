@@ -39,14 +39,23 @@ const BookTicketUser = () => {
 
   const handleOk = async () => {
     try {
-      const res = await sendRefund({ password: password, id: id });
-      if (res.error) {
-        message.error(res?.error?.data?.message);
-        return;
-      }
-      alert("Thực hiện hoàn tiền thành công!");
-      setIsModalVisible(false);
-      window.location.reload();
+      Modal.confirm({
+        title: 'Xác Nhận Hoàn Tiền',
+        content: 'Nếu như hoàn tiền bạn sẽ mất 30% số tiền đã đặt. Bạn có chắc chắn muốn hoàn tiền?',
+        onOk: async () => {
+          const res = await sendRefund({ password: password, id: id });
+          if (res.error) {
+            message.error(res?.error?.data?.message);
+            return;
+          }
+          message.success('Thực hiện hoàn tiền thành công!');
+          setIsModalVisible(false);
+          window.location.reload();
+        },
+        onCancel: () => {
+          // Hủy bỏ thực hiện hoàn tiền
+        },
+      });
     } catch (error) {
       console.log(error);
     }
@@ -261,7 +270,7 @@ const BookTicketUser = () => {
       }
     );
     setDataBook(dataBookTicket);
-  },[fetchBookTicket])
+  }, [fetchBookTicket])
   const handleChange: TableProps<DataType>["onChange"] = (
     pagination,
     filters
