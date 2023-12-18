@@ -1,185 +1,93 @@
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 import Header from "../../../Layout/LayoutUser/Header";
-
+import { useFetchBlogQuery } from "../../../service/blog.service";
+import { IBlogs } from "../../../interface/model";
+import { useState } from "react";
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import { Link } from "react-router-dom";
 const Cinema = () => {
+  const [displayedBlogs, setDisplayedBlogs] = useState();
+  const { data: blogs, error } = useFetchBlogQuery() as any;
+
+  blogs?.data?.filter((blog: any) => blog.status === 1)
+    .map((blog: any, index: number) => {
+      console.log(blog);
+      console.log("blog");
+    });
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    arrows: true, // Hiển thị các mũi tên chuyển slider
+  };
   return (
-    <div className="bg-zinc-900">
-      <section className="relative bg-[url(https://www.pumzithefilm.com/wp-content/uploads/2023/08/film2.jpg)] bg-cover w-full bg-center bg-no-repeat">
-        <Header />
-        <div className="text-center my-10 px-10 h-screen py-[200px]  max-w-screen-xl mx-auto">
-          <h2 className="text-[#FFFFFF] mx-auto text-5xl font-bold">
-            Khám phá rạp chiếu phim của chúng tôi tại thành phố đáng yêu của
-            bạn!
+    <>
+
+      <Header />
+
+
+      {/* <section className="slide-container"> */}
+      <Slider {...settings} className="slide-container">
+        {blogs?.data
+          ?.filter((blog: any) => blog.status === 1)
+          .map((blog: any, index: number) => (
+            <div key={index} className="relative overflow-hidden shadow transition hover:shadow-lg aspect-w-16 aspect-h-9">
+              <Link to={`/blog/${blog.id}`}>
+                <img
+                  src={blog.image}
+                  className="slick-slide"
+                  alt={`Slide ${index + 1}`}
+                  style={{ width: '100%', height: '800px' }} // Set the width to 100%
+                />
+              </Link>
+            </div>
+          ))}
+      </Slider>
+
+      {/* </section> */}
+
+
+      <div className="popcorn mx-auto max-w-5xl mb-20">
+
+        <div className="What’s On max-w-6xl px-10 my-[66px] mx-auto">
+          <h2 className="text-[#FFFFFF] text-[40px] font-bold text-center">
+            Có Gì Hot!
           </h2>
-          <p className="text-[#FFFFFF] mx-auto px-20 py-10">
-            Trải nghiệm rạp chiếu phim CGV tại thành phố thân yêu của bạn
-          </p>
+          <span className="block text-[#8E8E8E] text-[17px] text-center">
+            Khám phá một bộ sưu tập các ưu đãi độc đáo và đặc biệt!
+          </span>
+
+          <div className="What’s On img my-10 grid grid-cols-3 gap-8">
+            {blogs &&
+              blogs?.data?.slice(0, displayedBlogs).map((blog: IBlogs) => blog.status === 1 ? (
+                <article
+                  key={blog.id}
+                  className="relative overflow-hidden rounded-lg border border-gray-200 shadow transition hover:shadow-lg"
+                >
+                  <Link to={`/blog/ ${blog.id}`}>
+                    <img
+                      src={blog.image}
+                      className="w-full h-full object-cover"
+                      alt={blog.title}
+                    />
+                  </Link>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-black bg-opacity-50">
+                    <Link to={`/blog/${blog.id}`}>
+                      <h3 className="text-white text-sm">{blog.title}</h3>
+                    </Link>
+                  </div>
+                </article>
+              ) : null)}
+          </div>
+
         </div>
-      </section>
-      <div>
-        <div className="py-[60px] flex justify-center items-center ">
-          <span className="text-[#8E8E8E] mr-[20px] ">Tìm Kiếm CGV tại</span>
-          <select
-            className="rounded-[40px] px-6 py-2  text-white hover: bg-red-600 "
-            name=""
-            id=""
-          >
-            <option className=" " value="">
-              Hà Nội
-            </option>
-            <option className="" value="">
-              Đà Nẵng
-            </option>
-            <option className="" value="">
-              Thành Phố Hồ Chí Minh
-            </option>
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-7 justify-center w-[1050px] mx-auto">
-          <div className="w-[516px]">
-            <Link to={``} className="block group ">
-              <img
-                src="https://congthuong-cdn.mastercms.vn/stores/news_dataimages/nguyentam/122020/11/14/in_article/2038_image001.jpg?rt=20201211142039"
-                alt=""
-                className="object-cover w-[540px] h-[340px] rounded-[10px] aspect-square"
-              />
-
-              <div className="mb-[20px] my-[10px] flex justify-between">
-                <h3 className="font-bold text-[20px] text-white">Poins Mall</h3>
-
-                <p className="mt-1 text-[16px] text-[#8E8E8E] font-[400] ">
-                  cách đây 3 km
-                </p>
-              </div>
-              <Link
-                className="w-full inline-block rounded-[12px] border border-[#EE2E24] bg-[#EE2E24] px-12 py-3 text-sm font-medium text-white hover:bg-red-700 hover:text-white-600 focus:outline-none focus:ring active:text-white-500"
-                to="/download"
-              >
-                <span className="pl-[150px] ">Xem Lịch Chiếu</span>
-              </Link>
-            </Link>
-          </div>
-          <div className="w-[516px]">
-            <Link to={``} className="block group ">
-              <img
-                src="https://congthuong-cdn.mastercms.vn/stores/news_dataimages/nguyentam/122020/11/14/in_article/2038_image001.jpg?rt=20201211142039"
-                alt=""
-                className="object-cover w-[540px] h-[340px] rounded-[10px] aspect-square"
-              />
-
-              <div className="mb-[20px] my-[10px] flex justify-between">
-                <h3 className="font-bold text-[20px] text-white">Poins Mall</h3>
-
-                <p className="mt-1 text-[16px] text-[#8E8E8E] font-[400] ">
-                  cách đây 3 km
-                </p>
-              </div>
-              <Link
-                className="w-full inline-block rounded-[12px] border border-[#EE2E24] bg-[#EE2E24] px-12 py-3 text-sm font-medium text-white hover:bg-red-700 hover:text-white-600 focus:outline-none focus:ring active:text-white-500"
-                to="/download"
-              >
-                <span className="pl-[150px] ">Xem Lịch Chiếu</span>
-              </Link>
-            </Link>
-          </div>
-          <div className="w-[516px]">
-            <Link to={``} className="block group ">
-              <img
-                src="https://congthuong-cdn.mastercms.vn/stores/news_dataimages/nguyentam/122020/11/14/in_article/2038_image001.jpg?rt=20201211142039"
-                alt=""
-                className="object-cover w-[540px] h-[340px] rounded-[10px] aspect-square"
-              />
-
-              <div className="mb-[20px] my-[10px] flex justify-between">
-                <h3 className="font-bold text-[20px] text-white">Poins Mall</h3>
-
-                <p className="mt-1 text-[16px] text-[#8E8E8E] font-[400] ">
-                  cách đây 3 km
-                </p>
-              </div>
-              <Link
-                className="w-full inline-block rounded-[12px] border border-[#EE2E24] bg-[#EE2E24] px-12 py-3 text-sm font-medium text-white hover:bg-red-700 hover:text-white-600 focus:outline-none focus:ring active:text-white-500"
-                to="/download"
-              >
-                <span className="pl-[150px] ">Xem Lịch Chiếu</span>
-              </Link>
-            </Link>
-          </div>
-          <div className="w-[516px]">
-            <Link to={``} className="block group ">
-              <img
-                src="https://congthuong-cdn.mastercms.vn/stores/news_dataimages/nguyentam/122020/11/14/in_article/2038_image001.jpg?rt=20201211142039"
-                alt=""
-                className="object-cover w-[540px] h-[340px] rounded-[10px] aspect-square"
-              />
-
-              <div className="mb-[20px] my-[10px] flex justify-between">
-                <h3 className="font-bold text-[20px] text-white">Poins Mall</h3>
-
-                <p className="mt-1 text-[16px] text-[#8E8E8E] font-[400] ">
-                  cách đây 3 km
-                </p>
-              </div>
-              <Link
-                className="w-full inline-block rounded-[12px] border border-[#EE2E24] bg-[#EE2E24] px-12 py-3 text-sm font-medium text-white hover:bg-red-700 hover:text-white-600 focus:outline-none focus:ring active:text-white-500"
-                to="/download"
-              >
-                <span className="pl-[150px] ">Xem Lịch Chiếu</span>
-              </Link>
-            </Link>
-          </div>
-          <div className="w-[516px]">
-            <Link to={``} className="block group ">
-              <img
-                src="https://congthuong-cdn.mastercms.vn/stores/news_dataimages/nguyentam/122020/11/14/in_article/2038_image001.jpg?rt=20201211142039"
-                alt=""
-                className="object-cover w-[540px] h-[340px] rounded-[10px] aspect-square"
-              />
-
-              <div className="mb-[20px] my-[10px] flex justify-between">
-                <h3 className="font-bold text-[20px] text-white">Poins Mall</h3>
-
-                <p className="mt-1 text-[16px] text-[#8E8E8E] font-[400] ">
-                  cách đây 3 km
-                </p>
-              </div>
-              <Link
-                className="w-full inline-block rounded-[12px] border border-[#EE2E24] bg-[#EE2E24] px-12 py-3 text-sm font-medium text-white hover:bg-red-700 hover:text-white-600 focus:outline-none focus:ring active:text-white-500"
-                to="/download"
-              >
-                <span className="pl-[150px] ">Xem Lịch Chiếu</span>
-              </Link>
-            </Link>
-          </div>
-          <div className="w-[516px]">
-            <Link to={``} className="block group ">
-              <img
-                src="https://congthuong-cdn.mastercms.vn/stores/news_dataimages/nguyentam/122020/11/14/in_article/2038_image001.jpg?rt=20201211142039"
-                alt=""
-                className="object-cover w-[540px] h-[340px] rounded-[10px] aspect-square"
-              />
-
-              <div className="mb-[20px] my-[10px] flex justify-between">
-                <h3 className="font-bold text-[20px] text-white">Poins Mall</h3>
-
-                <p className="mt-1 text-[16px] text-[#8E8E8E] font-[400] ">
-                  cách đây 3 km
-                </p>
-              </div>
-              <Link
-                className="w-full inline-block rounded-[12px] border border-[#EE2E24] bg-[#EE2E24] px-12 py-3 text-sm font-medium text-white hover:bg-red-700 hover:text-white-600 focus:outline-none focus:ring active:text-white-500"
-                to="/download"
-              >
-                <span className="pl-[150px] ">Xem Lịch Chiếu</span>
-              </Link>
-            </Link>
-          </div>
-        </div>
-        <p className="flex justify-center items-center text-[16px] text-[#8E8E8E] font-[400] underline py-[40px] ">
-          Xem thêm
-        </p>
       </div>
-    </div>
+    </>
   );
 };
 

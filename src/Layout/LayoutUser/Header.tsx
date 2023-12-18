@@ -208,7 +208,7 @@ const Header: React.FC = () => {
             Giá vé
           </Link>
           <Link to={"/cinema"} className="hover:text-[#EE2E24]">
-            Blog
+            Bài viết
           </Link>
 
           {(IfUser as any)?.role === 2 && (
